@@ -6,7 +6,7 @@ export const useEditor = () => {
   const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
 
-  useAutoResize({canvas, container});
+  useAutoResize({ canvas, container });
 
   const init = useCallback(
     ({
