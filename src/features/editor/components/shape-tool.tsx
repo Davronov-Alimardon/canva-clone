@@ -9,10 +9,14 @@ interface ShapeToolProps {
   iconClassName?: string;
 }
 
-export const ShapeTool = ({ onClick, icon: Icon, iconClassName }: ShapeToolProps) => {
+export const ShapeTool = ({
+  onClick,
+  icon: Icon,
+  iconClassName,
+}: ShapeToolProps) => {
   return (
     <button onClick={onClick} className="aspect-square border rounded-md p-5">
       <Icon className={cn("h-full w-full", iconClassName)} />
     </button>
-  )
+  );
 };
