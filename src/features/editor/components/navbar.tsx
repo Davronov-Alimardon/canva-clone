@@ -19,8 +19,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { BsCloudCheck } from "react-icons/bs";
+import { ActiveTool } from "@/features/editor/types";
+import { cn } from "@/lib/utils";
 
-export const Navbar = () => {
+interface NavbarProps {
+  activeTool: ActiveTool;
+  onChangeActiveTool: (tool: ActiveTool) => void;
+}
+
+export const Navbar = ({ activeTool, onChangeActiveTool }: NavbarProps) => {
   return (
     <nav className="flex items-center w-full p-4 h-[68px] gap-x-8 border-b lg:pl-[34px]">
       <Logo />
@@ -55,8 +62,8 @@ export const Navbar = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => {}} // TODO: Add functionality
-            className="" // TODO: add dynamic class
+            onClick={() => onChangeActiveTool("select")}
+            className={cn(activeTool === "select" && "bg-gray-100")}
           >
             <MousePointerClick className="size-4" />
           </Button>
