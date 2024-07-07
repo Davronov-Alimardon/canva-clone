@@ -50,6 +50,41 @@ const buildEditor = ({
   };
 
   return {
+    getActiveOpacity: () => {
+      const selectedObject = selectedObjects[0];
+
+      if (!selectedObject) {
+        return 0;
+      }
+
+      const value = selectedObject.get("opacity") || 1;
+
+      return value;
+    },
+    changeOpacity: (value: number) => {
+      canvas.getActiveObjects().forEach((object) => {
+        object.set({ opacity: value });
+      });
+      canvas.renderAll();
+    },
+    bringForward: () => {
+      canvas.getActiveObjects().forEach((object) => {
+        canvas.bringForward(object);
+      });
+      canvas.renderAll();
+
+      const workspace = getWorkSpace();
+      workspace?.sendToBack();
+    },
+    sendBackwards: () => {
+      canvas.getActiveObjects().forEach((object) => {
+        canvas.sendBackwards(object);
+      });
+      canvas.renderAll();
+
+      const workspace = getWorkSpace();
+      workspace?.sendToBack();
+    },
     changeFillColor: (value: string) => {
       setFillColor(value);
       canvas.getActiveObjects().forEach((object) => {
@@ -90,7 +125,7 @@ const buildEditor = ({
         fill: fillColor,
         stroke: strokeColor,
         strokeWidth: strokeWidth,
-        strokeDashArray: strokeDashArray
+        strokeDashArray: strokeDashArray,
       });
 
       addToCanvas(object);
@@ -103,7 +138,7 @@ const buildEditor = ({
         fill: fillColor,
         stroke: strokeColor,
         strokeWidth: strokeWidth,
-        strokeDashArray: strokeDashArray
+        strokeDashArray: strokeDashArray,
       });
 
       addToCanvas(object);
@@ -114,7 +149,7 @@ const buildEditor = ({
         fill: fillColor,
         stroke: strokeColor,
         strokeWidth: strokeWidth,
-        strokeDashArray: strokeDashArray
+        strokeDashArray: strokeDashArray,
       });
 
       addToCanvas(object);
@@ -195,7 +230,6 @@ const buildEditor = ({
 
       const value = selectedObject.get("stroke") || strokeColor;
 
-      // Currently, gradients & patterns are not supported
       return value;
     },
     getActiveStrokeWidth: () => {
