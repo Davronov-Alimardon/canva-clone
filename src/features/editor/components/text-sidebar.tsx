@@ -30,7 +30,7 @@ export const TextSidebar = ({
     >
       <ToolSidebarHeader
         title="Text"
-        description="Add text to your canvas" // -19:57
+        description="Add text to your canvas"
       />
       <ScrollArea>
         <div className="p-4 space-y-4 border-b">
