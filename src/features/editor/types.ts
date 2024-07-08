@@ -78,6 +78,8 @@ export const STROKE_WIDTH = 2;
 export const STROKE_DASH_ARRAY = [];
 export const FONT_FAMILY = "Arial";
 export const FONT_SIZE = 32;
+export const FONT_WEIGHT = 400;
+export const FONT_STYLE = "normal";
 
 export const CIRCLE_OPTIONS = {
   radius: 225,
@@ -150,6 +152,14 @@ export type BuildEditorProps = {
 };
 
 export interface Editor {
+  changeTextAlign: (value: string) => void;
+  getActiveTextAlign: () => string;
+  changeFontUnderline: (value: boolean) => void;
+  getActiveFontUnderline: () => boolean;
+  changeFontLinethrough: (value: boolean) => void;
+  getActiveFontLinethrough: () => boolean;
+  changeFontStyle: (value: string) => void;
+  changeFontWeight: (value: number) => void;
   changeFontFamily: (value: string) => void;
   addText: (value: string, options?: ITextboxOptions) => void;
   getActiveOpacity: () => number;
@@ -167,6 +177,8 @@ export interface Editor {
   addInverseTriangle: () => void;
   addDiamond: () => void;
   canvas: fabric.Canvas;
+  getActiveFontWeight: () => number;
+  getActiveFontStyle: () => string;
   getActiveFontFamily: () => string;
   getActiveFillColor: () => string;
   getActiveStrokeColor: () => string;
