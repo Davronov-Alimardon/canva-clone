@@ -57,6 +57,11 @@ const buildEditor = ({
   };
 
   return {
+    delete: () => {
+      canvas.getActiveObjects().forEach((Object) => canvas.remove(Object))
+      canvas.discardActiveObject()
+      canvas.renderAll()
+    },
     changeFontSize: (value: number) => {
       canvas.getActiveObjects().forEach((object) => {
         if (isTextType(object.type)) {
