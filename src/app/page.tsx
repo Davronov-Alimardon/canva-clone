@@ -1,12 +1,25 @@
+"use client";
+
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 
 export default function Home() {
+  const [loading, setLoading] = useState(false);
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-black">
-      <Button size="lg" variant="secondary">
-        <Link href="/editor/beta">Click Me (to redirect)</Link>
-      </Button>
+      <Link href="/editor/beta">
+        <Button
+          size="lg"
+          onClick={() => setLoading(true)}
+          variant="secondary"
+          disabled={loading}
+        >
+          {loading ? <Loader2 className="size-4 animate-spin" /> : "Open App"}
+        </Button>
+      </Link>
     </div>
   );
 }
