@@ -9,6 +9,7 @@ import { useGenerateImage } from "@/features/ai/api/use-generate-image";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Loader2 } from "lucide-react";
 
 interface AiSidebarProps {
   editor: Editor | undefined;
@@ -60,7 +61,7 @@ export const AiSidebar = ({ editor, activeTool, onChangeActiveTool }: AiSidebarP
             onChange={(e) => setValue(e.target.value)}
           />
           <Button disabled={mutation.isPending} type="submit" className="w-full">
-            Generate
+            {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : "Generate"}
           </Button>
         </form>
       </ScrollArea>

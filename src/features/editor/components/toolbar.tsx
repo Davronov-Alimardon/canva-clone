@@ -13,6 +13,7 @@ import {
   ArrowDown,
   ArrowUp,
   ChevronDown,
+  SquareSplitHorizontal,
   Trash,
 } from "lucide-react";
 import {
@@ -32,11 +33,7 @@ interface ToolbarProps {
   onChangeActiveTool: (tool: ActiveTool) => void;
 }
 
-export const Toolbar = ({
-  editor,
-  activeTool,
-  onChangeActiveTool,
-}: ToolbarProps) => {
+export const Toolbar = ({ editor, activeTool, onChangeActiveTool }: ToolbarProps) => {
   const [properties, setProperties] = useState({
     fillColor: editor?.getActiveFillColor(),
     strokeColor: editor?.getActiveStrokeColor(),
@@ -196,14 +193,9 @@ export const Toolbar = ({
                 onClick={() => onChangeActiveTool("font")}
                 size="icon"
                 variant="ghost"
-                className={cn(
-                  "w-auto px-2 text-sm",
-                  activeTool === "font" && "bg-gray-100"
-                )}
+                className={cn("w-auto px-2 text-sm", activeTool === "font" && "bg-gray-100")}
               >
-                <div className="max-w-[100px] truncate">
-                  {properties.fontFamily}
-                </div>
+                <div className="max-w-[100px] truncate">{properties.fontFamily}</div>
                 <ChevronDown className="size-4 ml-2 shrink-0" />
               </Button>
             </Hint>
@@ -226,9 +218,7 @@ export const Toolbar = ({
                 onClick={toggleItalic}
                 size="icon"
                 variant="ghost"
-                className={cn(
-                  properties.fontStyle === "italic" && "bg-gray-100"
-                )}
+                className={cn(properties.fontStyle === "italic" && "bg-gray-100")}
               >
                 <FaItalic className="size-4 " />
               </Button>
@@ -276,9 +266,7 @@ export const Toolbar = ({
                 onClick={() => onChangeTextAlign("center")}
                 size="icon"
                 variant="ghost"
-                className={cn(
-                  properties.textAlign === "center" && "bg-gray-100"
-                )}
+                className={cn(properties.textAlign === "center" && "bg-gray-100")}
               >
                 <AlignCenter className="size-4 " />
               </Button>
@@ -290,19 +278,14 @@ export const Toolbar = ({
                 onClick={() => onChangeTextAlign("right")}
                 size="icon"
                 variant="ghost"
-                className={cn(
-                  properties.textAlign === "right" && "bg-gray-100"
-                )}
+                className={cn(properties.textAlign === "right" && "bg-gray-100")}
               >
                 <AlignRight className="size-4 " />
               </Button>
             </Hint>
           </div>
           <div className="flex items-center h-full justify-center">
-            <FontSizeInput
-              value={properties.fontSize}
-              onChange={onChangeFontSize}
-            />
+            <FontSizeInput value={properties.fontSize} onChange={onChangeFontSize} />
           </div>
         </>
       )}
@@ -322,24 +305,31 @@ export const Toolbar = ({
         </div>
       )}
 
+      {isImage && (
+        <div className="flex items-center h-full justify-center">
+          <Hint label="Remove Background" side="bottom" sideOffset={5}>
+            <Button
+              onClick={() => onChangeActiveTool("remove-bg")}
+              size="icon"
+              variant="ghost"
+              className={cn(activeTool === "remove-bg" && "bg-gray-100")}
+            >
+              <SquareSplitHorizontal className="size-4 " />
+            </Button>
+          </Hint>
+        </div>
+      )}
+
       <div className="flex items-center h-full justify-center">
         <Hint label="Bring Forward" side="bottom" sideOffset={5}>
-          <Button
-            onClick={() => editor?.bringForward()}
-            size="icon"
-            variant="ghost"
-          >
+          <Button onClick={() => editor?.bringForward()} size="icon" variant="ghost">
             <ArrowUp className="size-4 " />
           </Button>
         </Hint>
       </div>
       <div className="flex items-center h-full justify-center">
         <Hint label="Send Backwards" side="bottom" sideOffset={5}>
-          <Button
-            onClick={() => editor?.sendBackwards()}
-            size="icon"
-            variant="ghost"
-          >
+          <Button onClick={() => editor?.sendBackwards()} size="icon" variant="ghost">
             <ArrowDown className="size-4 " />
           </Button>
         </Hint>
