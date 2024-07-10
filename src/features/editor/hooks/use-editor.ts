@@ -20,7 +20,7 @@ import {
   TRIANGLE_OPTIONS,
 } from "@/features/editor/types";
 import { useCanvasEvents } from "@/features/editor/hooks/use-canvas-events";
-import { isTextType } from "@/features/editor/utils";
+import { createFilter, isTextType } from "@/features/editor/utils";
 
 const buildEditor = ({
   canvas,
@@ -57,26 +57,40 @@ const buildEditor = ({
   };
 
   return {
+    changeImageFilter: (value: string) => {
+      const objects = canvas.getActiveObjects();
+      objects.forEach((object) => {
+        if (object.type === "image") {
+          const imageObject = object as fabric.Image;
+
+          const effect = createFilter(value);
+
+          imageObject.filters = effect ? [effect] : [];
+          imageObject.applyFilters();
+          canvas.renderAll();
+        }
+      });
+    },
     addImage: (value: string) => {
       fabric.Image.fromURL(
         value,
         (image) => {
-          const workspace = getWorkSpace()
+          const workspace = getWorkSpace();
 
-          image.scaleToWidth(workspace?.width || 0)
-          image.scaleToHeight(workspace?.height || 0)
-          
-          addToCanvas(image)
+          image.scaleToWidth(workspace?.width || 0);
+          image.scaleToHeight(workspace?.height || 0);
+
+          addToCanvas(image);
         },
         {
-          crossOrigin: "anonymus"
+          crossOrigin: "anonymus",
         }
-      )
+      );
     },
     delete: () => {
-      canvas.getActiveObjects().forEach((Object) => canvas.remove(Object))
-      canvas.discardActiveObject()
-      canvas.renderAll()
+      canvas.getActiveObjects().forEach((Object) => canvas.remove(Object));
+      canvas.discardActiveObject();
+      canvas.renderAll();
     },
     changeFontSize: (value: number) => {
       canvas.getActiveObjects().forEach((object) => {
