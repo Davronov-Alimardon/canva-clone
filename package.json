@@ -17,6 +17,7 @@
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.2",
     "@tanstack/react-query": "^5.50.1",
+    "@uploadthing/react": "^6.7.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "fabric": "5.3.0-browser",
@@ -31,7 +32,8 @@
     "react-icons": "^5.2.1",
     "tailwind-merge": "^2.3.0",
     "tailwindcss-animate": "^1.0.7",
-    "unsplash-js": "^7.0.19"
+    "unsplash-js": "^7.0.19",
+    "uploadthing": "^6.13.2"
   },
   "devDependencies": {
     "@types/fabric": "5.3.0",
