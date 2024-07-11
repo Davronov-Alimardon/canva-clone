@@ -197,6 +197,11 @@ export type BuildEditorProps = {
 };
 
 export interface Editor {
+  saveSvg: () => void;
+  savePng: () => void;
+  saveJpg: () => void;
+  saveJson: () => void;
+  loadJson: (json: string) => void;
   onUndo: () => void;
   onRedo: () => void;
   canUndo: () => boolean;
