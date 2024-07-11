@@ -2,6 +2,17 @@ import { fabric } from "fabric";
 import { ITextboxOptions } from "fabric/fabric-impl";
 import * as material from "material-colors";
 
+export const JSON_KEYS = [
+  "name",
+  "gradientAngle",
+  "selectable",
+  "hasControls",
+  "linkData",
+  "editable",
+  "extensionType",
+  "extension",
+];
+
 export const filters = [
   "none",
   "polaroid",
@@ -163,6 +174,11 @@ export interface EditorHookProps {
 }
 
 export type BuildEditorProps = {
+  undo: () => void;
+  redo: () => void;
+  save: (skip?: boolean) => void;
+  canUndo: () => boolean;
+  canRedo: () => boolean;
   autoZoom: () => void;
   copy: () => void;
   paste: () => void;
@@ -181,7 +197,14 @@ export type BuildEditorProps = {
 };
 
 export interface Editor {
-  getWorkSpace: () => fabric.Object | undefined
+  onUndo: () => void;
+  onRedo: () => void;
+  canUndo: () => boolean;
+  canRedo: () => boolean;
+  autoZoom: () => void;
+  getWorkSpace: () => fabric.Object | undefined;
+  zoomIn: () => void;
+  zoomOut: () => void;
   changeSize: (value: { width: number; height: number }) => void;
   changeBackground: (value: string) => void;
   enableDrawingMode: () => void;

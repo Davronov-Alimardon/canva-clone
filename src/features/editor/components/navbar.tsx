@@ -1,12 +1,6 @@
 "use client";
 import { CiFileOn } from "react-icons/ci";
-import {
-  ChevronDown,
-  Download,
-  MousePointerClick,
-  Redo2,
-  Undo2,
-} from "lucide-react";
+import { ChevronDown, Download, MousePointerClick, Redo2, Undo2 } from "lucide-react";
 import { Logo } from "@/features/editor/components/logo";
 
 import { Hint } from "@/components/hint";
@@ -19,15 +13,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { BsCloudCheck } from "react-icons/bs";
-import { ActiveTool } from "@/features/editor/types";
+import { ActiveTool, Editor } from "@/features/editor/types";
 import { cn } from "@/lib/utils";
 
 interface NavbarProps {
+  editor: Editor | undefined;
   activeTool: ActiveTool;
   onChangeActiveTool: (tool: ActiveTool) => void;
 }
 
-export const Navbar = ({ activeTool, onChangeActiveTool }: NavbarProps) => {
+export const Navbar = ({ editor, activeTool, onChangeActiveTool }: NavbarProps) => {
   return (
     <nav className="flex items-center w-full p-4 h-[68px] gap-x-8 border-b lg:pl-[34px]">
       <Logo />
@@ -47,9 +42,7 @@ export const Navbar = ({ activeTool, onChangeActiveTool }: NavbarProps) => {
               <CiFileOn className="size-8" />
               <div>
                 <p>Open</p>
-                <p className="text-xs text-muted-foreground">
-                  Open a JSON file
-                </p>
+                <p className="text-xs text-muted-foreground">Open a JSON file</p>
               </div>
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -72,10 +65,10 @@ export const Navbar = ({ activeTool, onChangeActiveTool }: NavbarProps) => {
         {/* Undo Button */}
         <Hint label="Undo" side="bottom" sideOffset={10}>
           <Button
+            disabled={!editor?.canUndo()}
             variant="ghost"
             size="icon"
-            onClick={() => {}} // TODO: Add functionality
-            className="" // TODO: add dynamic class
+            onClick={() => editor?.onUndo()} // TODO: Add functionality
           >
             <Undo2 className="size-4" />
           </Button>
@@ -84,10 +77,10 @@ export const Navbar = ({ activeTool, onChangeActiveTool }: NavbarProps) => {
         {/* Redo Button */}
         <Hint label="Redo" side="bottom" sideOffset={10}>
           <Button
+            disabled={!editor?.canRedo()}
             variant="ghost"
             size="icon"
-            onClick={() => {}} // TODO: Add functionality
-            className="" // TODO: add dynamic class
+            onClick={() => editor?.onRedo()} // TODO: Add functionality
           >
             <Redo2 className="size-4" />
           </Button>
@@ -115,9 +108,7 @@ export const Navbar = ({ activeTool, onChangeActiveTool }: NavbarProps) => {
                 <CiFileOn className="size-8" />
                 <div>
                   <p>JSON</p>
-                  <p className="text-xs text-muted-foreground">
-                    Save for later editing
-                  </p>
+                  <p className="text-xs text-muted-foreground">Save for later editing</p>
                 </div>
               </DropdownMenuItem>
 
@@ -129,9 +120,7 @@ export const Navbar = ({ activeTool, onChangeActiveTool }: NavbarProps) => {
                 <CiFileOn className="size-8" />
                 <div>
                   <p>PNG</p>
-                  <p className="text-xs text-muted-foreground">
-                    Best for sharing on the web
-                  </p>
+                  <p className="text-xs text-muted-foreground">Best for sharing on the web</p>
                 </div>
               </DropdownMenuItem>
 
@@ -143,9 +132,7 @@ export const Navbar = ({ activeTool, onChangeActiveTool }: NavbarProps) => {
                 <CiFileOn className="size-8" />
                 <div>
                   <p>JPG</p>
-                  <p className="text-xs text-muted-foreground">
-                    Best for printing
-                  </p>
+                  <p className="text-xs text-muted-foreground">Best for printing</p>
                 </div>
               </DropdownMenuItem>
 
@@ -157,9 +144,7 @@ export const Navbar = ({ activeTool, onChangeActiveTool }: NavbarProps) => {
                 <CiFileOn className="size-8" />
                 <div>
                   <p>SVG</p>
-                  <p className="text-xs text-muted-foreground">
-                    Best for editing vector software
-                  </p>
+                  <p className="text-xs text-muted-foreground">Best for editing vector software</p>
                 </div>
               </DropdownMenuItem>
             </DropdownMenuContent>
