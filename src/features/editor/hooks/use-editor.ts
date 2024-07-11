@@ -24,6 +24,7 @@ import { useCanvasEvents } from "@/features/editor/hooks/use-canvas-events";
 import { createFilter, isTextType } from "@/features/editor/utils";
 import { useClipboard } from "@/features/editor/hooks/use-clipboard";
 import { useHistory } from "@/features/editor/hooks/use-history";
+import { useHotkeys } from "./use-hotkeys";
 
 const buildEditor = ({
   save,
@@ -537,7 +538,7 @@ export const useEditor = ({ clearSelectionCallback }: EditorHookProps) => {
   const [strokeWidth, setStrokeWidth] = useState(STROKE_WIDTH);
   const [strokeDashArray, setStrokeDashArray] = useState<number[]>(STROKE_DASH_ARRAY);
 
-  const { save, canRedo, canUndo, undo, redo, canvasHistory, setHistoryIndex } = useHistory({
+  const { save, canRedo, canUndo, undo, redo, canvasHistory, setHistoryIndex, } = useHistory({
     canvas,
   });
 
@@ -551,6 +552,8 @@ export const useEditor = ({ clearSelectionCallback }: EditorHookProps) => {
     setSelectedObjects,
     clearSelectionCallback,
   });
+
+  
 
   const editor = useMemo(() => {
     if (canvas) {
@@ -596,6 +599,15 @@ export const useEditor = ({ clearSelectionCallback }: EditorHookProps) => {
     copy,
     paste,
   ]);
+
+  useHotkeys({
+    undo,
+    redo,
+    copy,
+    paste,
+    save,
+    canvas,
+  })
 
   const init = useCallback(
     ({
