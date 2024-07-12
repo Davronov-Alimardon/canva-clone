@@ -75,7 +75,7 @@ export const ImageSidebar = ({ editor, activeTool, onChangeActiveTool }: ImageSi
                       alt={image.alt_description || "Image"}
                       className="object-cover"
                       loading="eager"
-                      onError={(e) => (e.target.src = image.urls.small)}
+                      overrideSrc={image.urls.thumb}
                     />
                     <Link
                       href={image.links.html}
