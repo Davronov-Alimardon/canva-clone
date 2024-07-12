@@ -74,7 +74,8 @@ export const ImageSidebar = ({ editor, activeTool, onChangeActiveTool }: ImageSi
                       src={image.urls.thumb}
                       alt={image.alt_description || "Image"}
                       className="object-cover"
-                      loading="lazy"
+                      loading="eager"
+                      onError={(e) => (e.target.src = image.urls.small)}
                     />
                     <Link
                       href={image.links.html}
