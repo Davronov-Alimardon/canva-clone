@@ -137,7 +137,7 @@ export const SignUpCard = () => {
         </div>
         <p className="text-xs text-muted-foreground">
           Already have an account?{" "}
-          <Link href="/sign-in">
+          <Link href="/sign-in" onClick={() => setLoading(true)}>
             <span className="text-sky-700 hover:underline">Sign In</span>
           </Link>
         </p>
