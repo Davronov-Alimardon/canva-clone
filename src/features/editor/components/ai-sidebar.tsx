@@ -9,7 +9,7 @@ import { useGenerateImage } from "@/features/ai/api/use-generate-image";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 
 interface AiSidebarProps {
   editor: Editor | undefined;
@@ -48,7 +48,11 @@ export const AiSidebar = ({ editor, activeTool, onChangeActiveTool }: AiSidebarP
       )}
     >
       <ToolSidebarHeader title="AI" description="Generate an image using AI" />
-      <ScrollArea>
+      <div className="flex flex-col gap-y-4 items-center justify-center flex-1">
+        <AlertTriangle className="size-4 text-muted-foreground" />
+        <p className="text-muted-foreground text-xs">API problems, please try again later</p>
+      </div>
+      {/* <ScrollArea>
         <form onSubmit={onSubmit} className="p-4 space-y-6">
           <Textarea
             disabled={mutation.isPending}
@@ -64,7 +68,7 @@ export const AiSidebar = ({ editor, activeTool, onChangeActiveTool }: AiSidebarP
             {mutation.isPending ? <Loader2 className="size-4 animate-spin" /> : "Generate"}
           </Button>
         </form>
-      </ScrollArea>
+      </ScrollArea> */}
       <ToolSidebarClose onClick={onClose} />
     </aside>
   );
