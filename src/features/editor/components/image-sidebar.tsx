@@ -71,10 +71,10 @@ export const ImageSidebar = ({ editor, activeTool, onChangeActiveTool }: ImageSi
                   >
                     <Image
                       fill
-                      // @ts-ignore
-                      src={image.urls.small_s3}
+                      src={image.urls.small}
                       alt={image.alt_description || "Image"}
                       className="object-cover"
+                      loading="lazy"
                     />
                     <Link
                       href={image.links.html}
