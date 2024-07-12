@@ -11,7 +11,7 @@ export function TempHome() {
   const [loadingOut, setLoadingOut] = useState(false);
 
   return (
-    <div className="flex items-center justify-center min-h-screen gap-x-2 bg-black">
+    <div className="min-h-screen flex items-center justify-center  gap-x-2 bg-black">
       <Link href="/editor/beta">
         <Button
           size="lg"

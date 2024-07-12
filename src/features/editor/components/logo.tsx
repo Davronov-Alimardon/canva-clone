@@ -7,7 +7,7 @@ export const Logo = () => {
       <div className="size-8 relative shrink-0">
         <Image
           src="/logo.svg"
-          alt="Image AI"
+          alt="The Canvas"
           fill
           className="shrink-0 hover:opacity-75 transition"
         />
