@@ -16,6 +16,7 @@ import {
 import { BsCloudCheck } from "react-icons/bs";
 import { ActiveTool, Editor } from "@/features/editor/types";
 import { cn } from "@/lib/utils";
+import { UserButton } from "@/features/auth/components/user-button";
 
 interface NavbarProps {
   editor: Editor | undefined;
@@ -164,7 +165,7 @@ export const Navbar = ({ editor, activeTool, onChangeActiveTool }: NavbarProps) 
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          {/* TODO: Add user-button */}
+          <UserButton />
         </div>
       </div>
     </nav>
