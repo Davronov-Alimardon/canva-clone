@@ -30,5 +30,12 @@ import { protectServer } from "@/features/auth/utils";
 
 export default async function Home() {
   await protectServer();
-  return <TempHome />;
+
+  const session = await auth()
+  return (
+    <div>
+      <TempHome />
+      {JSON.stringify(session)}
+    </div>
+  );
 }
