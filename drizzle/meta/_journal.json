@@ -15,6 +15,13 @@
       "when": 1720779951375,
       "tag": "0001_ancient_phalanx",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1720802807637,
+      "tag": "0002_odd_reaper",
+      "breakpoints": true
     }
   ]
 }

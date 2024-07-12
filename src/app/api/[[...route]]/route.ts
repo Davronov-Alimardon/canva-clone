@@ -1,6 +1,7 @@
 import { Context, Hono } from "hono";
 import { handle } from "hono/vercel";
 import { AuthConfig, initAuthConfig } from "@hono/auth-js";
+import projects from "./projects";
 
 import ai from "./ai";
 import images from "./images";
@@ -20,7 +21,11 @@ const app = new Hono().basePath("/api");
 
 app.use("*", initAuthConfig(getAuthConfig));
 
-const routes = app.route("/ai", ai).route("/images", images).route("/users", users);
+const routes = app
+  .route("/ai", ai)
+  .route("/images", images)
+  .route("/users", users)
+  .route("/projects", projects);
 
 export const GET = handle(app);
 export const POST = handle(app);

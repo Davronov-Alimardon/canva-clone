@@ -1,3 +1,4 @@
+import { relations } from "drizzle-orm";
 import { boolean, timestamp, pgTable, text, primaryKey, integer } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "next-auth/adapters";
 
@@ -11,6 +12,10 @@ export const users = pgTable("user", {
   image: text("image"),
   password: text("password"),
 });
+
+export const usersRelations = relations(users, ({ many }) => ({
+  proects: many(projects)
+}))
 
 export const accounts = pgTable(
   "account",
@@ -78,3 +83,30 @@ export const authenticators = pgTable(
     }),
   })
 );
+
+export const projects = pgTable("project", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text("name").notNull(),
+  userId: text("userId")
+    .notNull()
+    .references(() => users.id, {
+      onDelete: "cascade",
+    }),
+  json: text("json").notNull(),
+  height: integer("height").notNull(),
+  weight: integer("weight").notNull(),
+  thumbnailUrl: text("thumbnailUrl"),
+  isTemplate: boolean("isTemplate"),
+  isPro: boolean("isPro"),
+  createdAt: timestamp("createdAt", { mode: "date" }).notNull(),
+  updatedAt: timestamp("updatedAt", { mode: "date" }).notNull(),
+});
+
+export const projectsRelations = relations(projects, ({ one }) => ({
+  user: one(users, {
+    fields: [projects.userId],
+    references: [users.id],
+  }),
+}));

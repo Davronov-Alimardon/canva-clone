@@ -16,11 +16,7 @@ interface ImageSidebarProps {
   onChangeActiveTool: (tool: ActiveTool) => void;
 }
 
-export const ImageSidebar = ({
-  editor,
-  activeTool,
-  onChangeActiveTool,
-}: ImageSidebarProps) => {
+export const ImageSidebar = ({ editor, activeTool, onChangeActiveTool }: ImageSidebarProps) => {
   const { data, isLoading, isError } = useGetImages();
 
   const onClose = () => {
@@ -34,10 +30,7 @@ export const ImageSidebar = ({
         activeTool === "images" ? "visible" : "hidden"
       )}
     >
-      <ToolSidebarHeader
-        title="Images"
-        description="Add Images to your canvas"
-      />
+      <ToolSidebarHeader title="Images" description="Add Images to your canvas" />
       <div className="p-4 border-b">
         <UploadButton
           appearance={{
@@ -61,9 +54,7 @@ export const ImageSidebar = ({
       {isError && (
         <div className="flex flex-col gap-y-4 items-center justify-center flex-1">
           <AlertTriangle className="size-4 text-muted-foreground" />
-          <p className="text-muted-foreground text-xs">
-            Failed to fetch Images
-          </p>
+          <p className="text-muted-foreground text-xs">Failed to fetch Images</p>
         </div>
       )}
       <ScrollArea>
@@ -80,7 +71,8 @@ export const ImageSidebar = ({
                   >
                     <Image
                       fill
-                      src={image.urls.small}
+                      // @ts-ignore
+                      src={image.urls.small_s3}
                       alt={image.alt_description || "Image"}
                       className="object-cover"
                     />
