@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+
 import { client } from "@/lib/hono";
 
 export const useGetImages = () => {
@@ -12,7 +13,7 @@ export const useGetImages = () => {
       }
 
       const { data } = await response.json();
-      return data
+      return data;
     },
   });
 
