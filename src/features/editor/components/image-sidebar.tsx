@@ -70,8 +70,7 @@ export const ImageSidebar = ({ editor, activeTool, onChangeActiveTool }: ImageSi
                     key={image.id}
                     className="relative w-full h-[100px] group hover:opacity-75 transition bg-muted rounded-sm overflow-hidden border"
                   >
-                    <Image
-                      fill
+                    <img
                       src={image?.urls?.small || image?.urls?.thumb}
                       alt={image?.urls?.small || "Image"}
                       className="object-cover"
