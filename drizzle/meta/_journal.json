@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1720537731893,
-      "tag": "0000_slow_mongu",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1720560776771,
-      "tag": "0001_needy_scorpion",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1720615645551,
-      "tag": "0002_aspiring_mephisto",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1720707842802,
-      "tag": "0003_dusty_alex_power",
+      "when": 1720968254566,
+      "tag": "0000_groovy_doctor_faustus",
       "breakpoints": true
     }
   ]

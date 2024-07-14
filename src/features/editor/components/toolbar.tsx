@@ -442,6 +442,7 @@ export const Toolbar = ({
             onClick={() => editor?.delete()}
             size="icon"
             variant="ghost"
+            className="text-red-600"
           >
             <Trash className="size-4" />
           </Button>
