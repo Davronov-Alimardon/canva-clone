@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 
-import { auth } from "@/auth";
 import { SignInCard } from "@/features/auth/components/sign-in-card";
+
+import { auth } from "@/auth";
 
 const SignInPage = async () => {
   const session = await auth();

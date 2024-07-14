@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS "project" (
 	"userId" text NOT NULL,
 	"json" text NOT NULL,
 	"height" integer NOT NULL,
-	"weight" integer NOT NULL,
+	"width" integer NOT NULL,
 	"thumbnailUrl" text,
 	"isTemplate" boolean,
 	"isPro" boolean,

@@ -8,7 +8,7 @@ interface SidebarItemProps {
   label: string;
   isActive?: boolean;
   onClick: () => void;
-}
+};
 
 export const SidebarItem = ({
   icon: Icon,
@@ -26,7 +26,9 @@ export const SidebarItem = ({
       )}
     >
       <Icon className="size-5 stroke-2 shrink-0" />
-      <span className="mt-2 text-xs">{label}</span>
+      <span className="mt-2 text-xs">
+        {label}
+      </span>
     </Button>
   );
 };

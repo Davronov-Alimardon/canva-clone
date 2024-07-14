@@ -1,6 +1,6 @@
 {
-  "id": "662d433c-ee2e-4cca-bae1-5221144f092d",
-  "prevId": "ee2a42b7-8c69-4be6-8cdb-3069b2ee59c5",
+  "id": "fada20e6-ef49-4ef9-b3e4-a98f2c45d35c",
+  "prevId": "0502fbee-ac60-4c9c-bb3b-49df5df42b73",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -224,8 +224,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "weight": {
-          "name": "weight",
+        "width": {
+          "name": "width",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -407,7 +407,6 @@
   },
   "enums": {},
   "schemas": {},
-  "sequences": {},
   "_meta": {
     "columns": {},
     "schemas": {},

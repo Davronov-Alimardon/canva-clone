@@ -3,9 +3,11 @@ import { useCallback, useRef } from "react";
 
 interface UseClipboardProps {
   canvas: fabric.Canvas | null;
-}
+};
 
-export const useClipboard = ({ canvas }: UseClipboardProps) => {
+export const useClipboard = ({
+  canvas
+}: UseClipboardProps) => {
   const clipboard = useRef<any>(null);
 
   const copy = useCallback(() => {
@@ -13,7 +15,7 @@ export const useClipboard = ({ canvas }: UseClipboardProps) => {
       clipboard.current = cloned;
     });
   }, [canvas]);
-
+  
   const paste = useCallback(() => {
     if (!clipboard.current) return;
 

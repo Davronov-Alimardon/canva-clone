@@ -2,7 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body {
+html,
+body {
   height: 100%;
 }
 
@@ -74,12 +75,10 @@ html, body {
   * {
     @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground;
   }
 }
-
 
 .circle-picker {
   width: auto !important;
@@ -87,7 +86,7 @@ html, body {
 
 .chrome-picker {
   width: auto !important;
-  box-shadow: none;
+  box-shadow: none !important;
   border-radius: 0.5rem !important;
   overflow: hidden !important;
 }

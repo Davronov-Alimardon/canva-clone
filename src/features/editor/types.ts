@@ -10,7 +10,7 @@ export const JSON_KEYS = [
   "linkData",
   "editable",
   "extensionType",
-  "extension",
+  "extension"
 ];
 
 export const filters = [
@@ -20,7 +20,7 @@ export const filters = [
   "kodachrome",
   "contrast",
   "brightness",
-  "grayscale",
+  "greyscale",
   "brownie",
   "vintage",
   "technicolor",
@@ -28,9 +28,9 @@ export const filters = [
   "invert",
   "blur",
   "sharpen",
-  "embos",
+  "emboss",
   "removecolor",
-  "blackwhite",
+  "blacknwhite",
   "vibrance",
   "blendcolor",
   "huerotate",
@@ -104,9 +104,9 @@ export type ActiveTool =
   | "font"
   | "opacity"
   | "filter"
+  | "settings"
   | "ai"
   | "remove-bg"
-  | "settings"
   | "templates";
 
 export const FILL_COLOR = "rgba(0,0,0,1)";
@@ -116,7 +116,6 @@ export const STROKE_DASH_ARRAY = [];
 export const FONT_FAMILY = "Arial";
 export const FONT_SIZE = 32;
 export const FONT_WEIGHT = 400;
-export const FONT_STYLE = "normal";
 
 export const CIRCLE_OPTIONS = {
   radius: 225,
@@ -135,6 +134,17 @@ export const RECTANGLE_OPTIONS = {
   strokeWidth: STROKE_WIDTH,
   width: 400,
   height: 400,
+  angle: 0,
+};
+
+export const DIAMOND_OPTIONS = {
+  left: 100,
+  top: 100,
+  fill: FILL_COLOR,
+  stroke: STROKE_COLOR,
+  strokeWidth: STROKE_WIDTH,
+  width: 600,
+  height: 600,
   angle: 0,
 };
 
@@ -158,20 +168,17 @@ export const TEXT_OPTIONS = {
   fontFamily: FONT_FAMILY,
 };
 
-export const DIAMOND_OPTIONS = {
-  left: 100,
-  top: 100,
-  fill: FILL_COLOR,
-  stroke: STROKE_COLOR,
-  strokeWidth: STROKE_WIDTH,
-  width: 600,
-  height: 600,
-  angle: 0,
-};
-
 export interface EditorHookProps {
+  defaultState?: string;
+  defaultWidth?: number;
+  defaultHeight?: number;
   clearSelectionCallback?: () => void;
-}
+  saveCallback?: (values: {
+    json: string;
+    height: number;
+    width: number;
+  }) => void;
+};
 
 export type BuildEditorProps = {
   undo: () => void;
@@ -197,9 +204,9 @@ export type BuildEditorProps = {
 };
 
 export interface Editor {
-  saveSvg: () => void;
   savePng: () => void;
   saveJpg: () => void;
+  saveSvg: () => void;
   saveJson: () => void;
   loadJson: (json: string) => void;
   onUndo: () => void;
@@ -207,11 +214,11 @@ export interface Editor {
   canUndo: () => boolean;
   canRedo: () => boolean;
   autoZoom: () => void;
-  getWorkSpace: () => fabric.Object | undefined;
   zoomIn: () => void;
   zoomOut: () => void;
-  changeSize: (value: { width: number; height: number }) => void;
+  getWorkspace: () => fabric.Object | undefined;
   changeBackground: (value: string) => void;
+  changeSize: (value: { width: number; height: number }) => void;
   enableDrawingMode: () => void;
   disableDrawingMode: () => void;
   onCopy: () => void;
@@ -228,15 +235,18 @@ export interface Editor {
   changeFontLinethrough: (value: boolean) => void;
   getActiveFontLinethrough: () => boolean;
   changeFontStyle: (value: string) => void;
+  getActiveFontStyle: () => string;
   changeFontWeight: (value: number) => void;
+  getActiveFontWeight: () => number;
+  getActiveFontFamily: () => string;
   changeFontFamily: (value: string) => void;
   addText: (value: string, options?: ITextboxOptions) => void;
   getActiveOpacity: () => number;
   changeOpacity: (value: number) => void;
   bringForward: () => void;
   sendBackwards: () => void;
-  changeFillColor: (value: string) => void;
   changeStrokeWidth: (value: number) => void;
+  changeFillColor: (value: string) => void;
   changeStrokeColor: (value: string) => void;
   changeStrokeDashArray: (value: number[]) => void;
   addCircle: () => void;
@@ -246,13 +256,9 @@ export interface Editor {
   addInverseTriangle: () => void;
   addDiamond: () => void;
   canvas: fabric.Canvas;
-  getActiveFontWeight: () => number;
-  getActiveFontStyle: () => string;
-  getActiveFontFamily: () => string;
   getActiveFillColor: () => string;
   getActiveStrokeColor: () => string;
   getActiveStrokeWidth: () => number;
   getActiveStrokeDashArray: () => number[];
-
   selectedObjects: fabric.Object[];
-}
+};

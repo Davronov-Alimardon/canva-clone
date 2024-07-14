@@ -1,48 +1,48 @@
+import { uuid } from "uuidv4";
 import { fabric } from "fabric";
-import { RGBColor } from "react-color";
-import { uuid } from "uuidv4"
+import type { RGBColor } from "react-color";
 
 export function transformText(objects: any) {
   if (!objects) return;
 
   objects.forEach((item: any) => {
     if (item.objects) {
-      transformText(item.objects)
+      transformText(item.objects);
     } else {
-      item.type === "text" && (item.type === "textbox")
+      item.type === "text" && (item.type === "textbox");
     }
-  })
-}
+  });
+};
 
 export function downloadFile(file: string, type: string) {
-  const anchorElement = document.createElement("a")
+  const anchorElement = document.createElement("a");
 
   anchorElement.href = file;
-  anchorElement.download = `${uuid()}.${type}`
-  document.body.appendChild(anchorElement)
-  anchorElement.click()
-  anchorElement.remove()
-}
+  anchorElement.download = `${uuid()}.${type}`;
+  document.body.appendChild(anchorElement);
+  anchorElement.click();
+  anchorElement.remove();
+};
 
 export function isTextType(type: string | undefined) {
   return type === "text" || type === "i-text" || type === "textbox";
-}
+};
 
 export function rgbaObjectToString(rgba: RGBColor | "transparent") {
   if (rgba === "transparent") {
-    return "rgba(0,0,0,0)";
+    return `rgba(0,0,0,0)`;
   }
 
   const alpha = rgba.a === undefined ? 1 : rgba.a;
 
   return `rgba(${rgba.r}, ${rgba.g}, ${rgba.b}, ${alpha})`;
-}
+};
 
 export const createFilter = (value: string) => {
   let effect;
 
   switch (value) {
-    case "grayscale":
+    case "greyscale":
       effect = new fabric.Image.filters.Grayscale();
       break;
     case "polaroid":
@@ -88,7 +88,7 @@ export const createFilter = (value: string) => {
         matrix: [0, -1, 0, -1, 5, -1, 0, -1, 0],
       });
       break;
-    case "embos":
+    case "emboss":
       effect = new fabric.Image.filters.Convolute({
         matrix: [1, 1, 1, 1, 0.7, -1, -1, -1, -1],
       });
@@ -97,27 +97,27 @@ export const createFilter = (value: string) => {
       // @ts-ignore
       effect = new fabric.Image.filters.RemoveColor({
         threshold: 0.2,
-        distance: 0.5,
+        distance: 0.5
       });
       break;
-    case "blackwhite":
+    case "blacknwhite":
       // @ts-ignore
       effect = new fabric.Image.filters.BlackWhite();
       break;
     case "vibrance":
       // @ts-ignore
-      effect = new fabric.Image.filters.Vibrance({
+      effect = new fabric.Image.filters.Vibrance({ 
         vibrance: 1,
       });
       break;
     case "blendcolor":
-      effect = new fabric.Image.filters.BlendColor({
+      effect = new fabric.Image.filters.BlendColor({ 
         color: "#00ff00",
         mode: "multiply",
       });
       break;
     case "huerotate":
-      effect = new fabric.Image.filters.HueRotation({
+      effect = new fabric.Image.filters.HueRotation({ 
         rotation: 0.5,
       });
       break;
@@ -127,18 +127,17 @@ export const createFilter = (value: string) => {
     case "gamma":
       // @ts-ignore
       effect = new fabric.Image.filters.Gamma({
-        gamma: [1, 0.5, 2.1],
+        gamma: [1, 0.5, 2.1]
       });
-      break;
     case "saturation":
       effect = new fabric.Image.filters.Saturation({
-        saturation: 0.7
+        saturation: 0.7,
       });
       break;
     default:
       effect = null;
       return;
-  }
+  };
 
   return effect;
 };
