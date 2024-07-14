@@ -1,17 +1,20 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Loader2, Sparkles } from "lucide-react";
 
 import { useCreateProject } from "@/features/projects/api/use-create-project";
 
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 export const Banner = () => {
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
   const mutation = useCreateProject();
 
   const onClick = () => {
+    setLoading(true);
     mutation.mutate(
       {
         name: "Untitled project",
@@ -46,7 +49,11 @@ export const Banner = () => {
           className="w-[160px]"
         >
           Start creating
-          <ArrowRight className="size-4 ml-2" />
+          {loading ? (
+            <Loader2 className="size-4 ml-2 animate-spin" />
+          ) : (
+            <ArrowRight className="size-4 ml-2" />
+          )}
         </Button>
       </div>
     </div>
