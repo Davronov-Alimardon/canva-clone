@@ -1,11 +1,6 @@
 "use client";
 
-import { 
-  CreditCard, 
-  Crown, 
-  Home, 
-  MessageCircleQuestion
-} from "lucide-react";
+import { CreditCard, Crown, Home, MessageCircleQuestion } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 import { usePaywall } from "@/features/subscriptions/hooks/use-paywall";
@@ -46,7 +41,7 @@ export const SidebarRoutes = () => {
               size="lg"
             >
               <Crown className="mr-2 size-4 fill-yellow-500 text-yellow-500" />
-              Upgrade to Image AI Pro
+              Upgrade to The Canvas Pro
             </Button>
           </div>
           <div className="px-3">
@@ -55,23 +50,13 @@ export const SidebarRoutes = () => {
         </>
       )}
       <ul className="flex flex-col gap-y-1 px-3">
-        <SidebarItem
-          href="/"
-          icon={Home}
-          label="Home"
-          isActive={pathname === "/"}
-        />
+        <SidebarItem href="/" icon={Home} label="Home" isActive={pathname === "/"} />
       </ul>
       <div className="px-3">
         <Separator />
       </div>
       <ul className="flex flex-col gap-y-1 px-3">
-        <SidebarItem
-          href={pathname}
-          icon={CreditCard}
-          label="Billing"
-          onClick={onClick}
-        />
+        <SidebarItem href={pathname} icon={CreditCard} label="Billing" onClick={onClick} />
         <SidebarItem
           href="mailto:support@codewithantonio.com"
           icon={MessageCircleQuestion}
