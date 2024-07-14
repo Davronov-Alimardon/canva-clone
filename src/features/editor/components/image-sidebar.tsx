@@ -73,7 +73,7 @@ export const ImageSidebar = ({ editor, activeTool, onChangeActiveTool }: ImageSi
                     <Image
                       fill
                       src={image?.urls?.small || image?.urls?.thumb}
-                      alt={image?.alt_description || "Image"}
+                      alt={image?.urls?.small || "Image"}
                       className="object-cover"
                       loading="lazy"
                     />
