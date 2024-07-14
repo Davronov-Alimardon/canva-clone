@@ -58,7 +58,7 @@ export const SidebarRoutes = () => {
       <ul className="flex flex-col gap-y-1 px-3">
         <SidebarItem href={pathname} icon={CreditCard} label="Billing" onClick={onClick} />
         <SidebarItem
-          href="mailto:support@codewithantonio.com"
+          href="mailto:support@example.com"
           icon={MessageCircleQuestion}
           label="Get Help"
         />
