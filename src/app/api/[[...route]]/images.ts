@@ -8,13 +8,21 @@ const DEFAULT_COLLECTION_IDS = ["317099"];
 
 const app = new Hono()
   .get("/", verifyAuth(), async (c) => {
+    if (!process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY) {
+      return c.json({ error: "Unsplash API key not configured" }, 500);
+    }
+
     const images = await unsplash.photos.getRandom({
       collectionIds: DEFAULT_COLLECTION_IDS,
       count: DEFAULT_COUNT,
     });
 
     if (images.errors) {
-      return c.json({ error: "Something went wrong" }, 400);
+      console.error("Unsplash API error:", images.errors);
+      return c.json({
+        error: "Failed to fetch images from Unsplash",
+        details: images.errors
+      }, 400);
     }
 
     let response = images.response;

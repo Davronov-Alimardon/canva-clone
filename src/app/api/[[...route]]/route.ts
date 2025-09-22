@@ -22,7 +22,13 @@ function getAuthConfig(c: Context): AuthConfig {
 
 const app = new Hono().basePath("/api");
 
-app.use("*", initAuthConfig(getAuthConfig));
+app.use("*", async (c, next) => {
+  // Skip auth middleware for /api/auth routes (handled by NextAuth)
+  if (c.req.path.startsWith("/api/auth")) {
+    return next();
+  }
+  return initAuthConfig(getAuthConfig)(c, next);
+});
 
 const routes = app
   .route("/ai", ai)

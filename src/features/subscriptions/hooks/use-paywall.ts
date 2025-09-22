@@ -9,7 +9,9 @@ export const usePaywall = () => {
 
   const subscriptionModal = useSubscriptionModal();
 
-  const shouldBlock = isLoadingSubscription || !subscription?.active;
+  // TODO: TESTING MODE - Disable paywall for development
+  // const shouldBlock = isLoadingSubscription || !subscription?.active;
+  const shouldBlock = false; // Set to true to re-enable paywall
 
   return {
     isLoading: isLoadingSubscription,

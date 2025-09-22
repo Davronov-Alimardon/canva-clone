@@ -56,7 +56,7 @@ export const UserButton = () => {
         <Avatar className="size-10 hover:opcaity-75 transition">
           <AvatarImage alt={name} src={imageUrl || ""} />
           <AvatarFallback className="bg-blue-500 font-medium text-white flex items-center justify-center">
-            {name.charAt(0).toUpperCase()}
+            {name ? name.charAt(0).toUpperCase() : '?'}
           </AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
