@@ -4,8 +4,13 @@ import { InferRequestType, InferResponseType } from "hono";
 
 import { client } from "@/lib/hono";
 
-type ResponseType = InferResponseType<(typeof client.api.projects)["$post"], 200>;
-type RequestType = InferRequestType<(typeof client.api.projects)["$post"]>["json"];
+type ResponseType = InferResponseType<
+  (typeof client.api.projects)["$post"],
+  200
+>;
+type RequestType = InferRequestType<
+  (typeof client.api.projects)["$post"]
+>["json"];
 
 export const useCreateProject = () => {
   const queryClient = useQueryClient();
@@ -27,7 +32,7 @@ export const useCreateProject = () => {
     },
     onError: () => {
       toast.error(
-        "Failed to create project. The session token may have expired, logout and login again, and everything will work fine."
+        "Failed to create project. The session token may have expired, logout and login again, and everything will work fine.",
       );
     },
   });

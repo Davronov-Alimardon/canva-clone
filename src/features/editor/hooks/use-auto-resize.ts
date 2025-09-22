@@ -47,9 +47,11 @@ export const useAutoResize = ({ canvas, container }: UseAutoResizeProps) => {
       return;
     }
 
-    viewportTransform[4] = canvas.width / 2 - workspaceCenter.x * viewportTransform[0];
+    viewportTransform[4] =
+      canvas.width / 2 - workspaceCenter.x * viewportTransform[0];
 
-    viewportTransform[5] = canvas.height / 2 - workspaceCenter.y * viewportTransform[3];
+    viewportTransform[5] =
+      canvas.height / 2 - workspaceCenter.y * viewportTransform[3];
 
     canvas.setViewportTransform(viewportTransform);
 

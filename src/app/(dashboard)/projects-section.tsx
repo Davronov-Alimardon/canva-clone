@@ -3,14 +3,14 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
-import { 
-  AlertTriangle, 
-  CopyIcon, 
-  FileIcon, 
-  Loader, 
-  MoreHorizontal, 
+import {
+  AlertTriangle,
+  CopyIcon,
+  FileIcon,
+  Loader,
+  MoreHorizontal,
   Search,
-  Trash
+  Trash,
 } from "lucide-react";
 
 import { useGetProjects } from "@/features/projects/api/use-get-projects";
@@ -23,12 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { 
-  Table,
-  TableRow,
-  TableBody,
-  TableCell,
-} from "@/components/ui/table";
+import { Table, TableRow, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/hooks/use-confirm";
 
@@ -53,33 +48,24 @@ export const ProjectsSection = () => {
     }
   };
 
-  const {
-    data,
-    status,
-    fetchNextPage,
-    isFetchingNextPage,
-    hasNextPage,
-  } = useGetProjects();
+  const { data, status, fetchNextPage, isFetchingNextPage, hasNextPage } =
+    useGetProjects();
 
   if (status === "pending") {
     return (
       <div className="space-y-4">
-        <h3 className="font-semibold text-lg">
-          Recent projects
-        </h3>
+        <h3 className="font-semibold text-lg">Recent projects</h3>
         <div className="flex flex-col gap-y-4 items-center justify-center h-32">
           <Loader className="size-6 animate-spin text-muted-foreground" />
         </div>
       </div>
-    )
+    );
   }
 
   if (status === "error") {
     return (
       <div className="space-y-4">
-        <h3 className="font-semibold text-lg">
-          Recent projects
-        </h3>
+        <h3 className="font-semibold text-lg">Recent projects</h3>
         <div className="flex flex-col gap-y-4 items-center justify-center h-32">
           <AlertTriangle className="size-6 text-muted-foreground" />
           <p className="text-muted-foreground text-sm">
@@ -87,34 +73,25 @@ export const ProjectsSection = () => {
           </p>
         </div>
       </div>
-    )
+    );
   }
 
-  if (
-    !data.pages.length ||
-    !data.pages[0].data.length
-  ) {
+  if (!data.pages.length || !data.pages[0].data.length) {
     return (
       <div className="space-y-4">
-        <h3 className="font-semibold text-lg">
-          Recent projects
-        </h3>
+        <h3 className="font-semibold text-lg">Recent projects</h3>
         <div className="flex flex-col gap-y-4 items-center justify-center h-32">
           <Search className="size-6 text-muted-foreground" />
-          <p className="text-muted-foreground text-sm">
-            No projects found
-          </p>
+          <p className="text-muted-foreground text-sm">No projects found</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="space-y-4"> 
+    <div className="space-y-4">
       <ConfirmDialog />
-      <h3 className="font-semibold text-lg">
-        Recent projects
-      </h3>
+      <h3 className="font-semibold text-lg">Recent projects</h3>
       <Table>
         <TableBody>
           {data.pages.map((group, i) => (
@@ -145,11 +122,7 @@ export const ProjectsSection = () => {
                   <TableCell className="flex items-center justify-end">
                     <DropdownMenu modal={false}>
                       <DropdownMenuTrigger asChild>
-                        <Button
-                          disabled={false}
-                          size="icon"
-                          variant="ghost"
-                        >
+                        <Button disabled={false} size="icon" variant="ghost">
                           <MoreHorizontal className="size-4" />
                         </Button>
                       </DropdownMenuTrigger>

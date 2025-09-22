@@ -17,7 +17,7 @@ interface RemoveBgSidebarProps {
   editor: Editor | undefined;
   activeTool: ActiveTool;
   onChangeActiveTool: (tool: ActiveTool) => void;
-};
+}
 
 export const RemoveBgSidebar = ({
   editor,
@@ -42,13 +42,16 @@ export const RemoveBgSidebar = ({
       return;
     }
 
-    mutation.mutate({
-      image: imageSrc,
-    }, {
-      onSuccess: ({ data }) => {
-        editor?.addImage(data);
+    mutation.mutate(
+      {
+        image: imageSrc,
       },
-    });
+      {
+        onSuccess: ({ data }) => {
+          editor?.addImage(data);
+        },
+      },
+    );
   };
 
   return (
@@ -73,16 +76,13 @@ export const RemoveBgSidebar = ({
       {imageSrc && (
         <ScrollArea>
           <div className="p-4 space-y-4">
-            <div className={cn(
-              "relative aspect-square rounded-md overflow-hidden transition bg-muted",
-              mutation.isPending && "opacity-50",
-            )}>
-              <Image
-                src={imageSrc}
-                fill
-                alt="Image"
-                className="object-cover"
-              />
+            <div
+              className={cn(
+                "relative aspect-square rounded-md overflow-hidden transition bg-muted",
+                mutation.isPending && "opacity-50",
+              )}
+            >
+              <Image src={imageSrc} fill alt="Image" className="object-cover" />
             </div>
             <Button
               disabled={mutation.isPending}

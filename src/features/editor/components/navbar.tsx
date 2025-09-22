@@ -4,13 +4,13 @@ import { CiFileOn } from "react-icons/ci";
 import { BsCloudCheck, BsCloudSlash } from "react-icons/bs";
 import { useFilePicker } from "use-file-picker";
 import { useMutationState } from "@tanstack/react-query";
-import { 
-  ChevronDown, 
-  Download, 
-  Loader, 
-  MousePointerClick, 
-  Redo2, 
-  Undo2
+import {
+  ChevronDown,
+  Download,
+  Loader,
+  MousePointerClick,
+  Redo2,
+  Undo2,
 } from "lucide-react";
 
 import { UserButton } from "@/features/auth/components/user-button";
@@ -34,7 +34,7 @@ interface NavbarProps {
   editor: Editor | undefined;
   activeTool: ActiveTool;
   onChangeActiveTool: (tool: ActiveTool) => void;
-};
+}
 
 export const Navbar = ({
   id,
@@ -127,28 +127,22 @@ export const Navbar = ({
           </Button>
         </Hint>
         <Separator orientation="vertical" className="mx-2" />
-        {isPending && ( 
+        {isPending && (
           <div className="flex items-center gap-x-2">
             <Loader className="size-4 animate-spin text-muted-foreground" />
-            <div className="text-xs text-muted-foreground">
-              Saving...
-            </div>
+            <div className="text-xs text-muted-foreground">Saving...</div>
           </div>
         )}
-        {!isPending && isError && ( 
+        {!isPending && isError && (
           <div className="flex items-center gap-x-2">
             <BsCloudSlash className="size-[20px] text-muted-foreground" />
-            <div className="text-xs text-muted-foreground">
-              Failed to save
-            </div>
+            <div className="text-xs text-muted-foreground">Failed to save</div>
           </div>
         )}
-        {!isPending && !isError && ( 
+        {!isPending && !isError && (
           <div className="flex items-center gap-x-2">
             <BsCloudCheck className="size-[20px] text-muted-foreground" />
-            <div className="text-xs text-muted-foreground">
-              Saved
-            </div>
+            <div className="text-xs text-muted-foreground">Saved</div>
           </div>
         )}
         <div className="ml-auto flex items-center gap-x-4">

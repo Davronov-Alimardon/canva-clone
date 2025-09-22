@@ -10,7 +10,7 @@ export const JSON_KEYS = [
   "linkData",
   "editable",
   "extensionType",
-  "extension"
+  "extension",
 ];
 
 export const filters = [
@@ -178,7 +178,7 @@ export interface EditorHookProps {
     height: number;
     width: number;
   }) => void;
-};
+}
 
 export type BuildEditorProps = {
   undo: () => void;
@@ -261,4 +261,4 @@ export interface Editor {
   getActiveStrokeWidth: () => number;
   getActiveStrokeDashArray: () => number[];
   selectedObjects: fabric.Object[];
-};
+}

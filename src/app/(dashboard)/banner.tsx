@@ -26,7 +26,7 @@ export const Banner = () => {
         onSuccess: ({ data }) => {
           router.push(`/editor/${data.id}`);
         },
-      }
+      },
     );
   };
 
@@ -38,9 +38,12 @@ export const Banner = () => {
         </div>
       </div>
       <div className="flex flex-col gap-y-2">
-        <h1 className="text-xl md:text-3xl font-semibold">Visualize your ideas with The Canvas</h1>
+        <h1 className="text-xl md:text-3xl font-semibold">
+          Visualize your ideas with The Canvas
+        </h1>
         <p className="text-xs md:text-sm mb-2">
-          Turn inspiration into design in no time. Simply upload an image and let AI do the rest.
+          Turn inspiration into design in no time. Simply upload an image and
+          let AI do the rest.
         </p>
         <Button
           disabled={mutation.isPending}

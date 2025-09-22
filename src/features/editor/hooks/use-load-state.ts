@@ -9,7 +9,7 @@ interface UseLoadStateProps {
   initialState: React.MutableRefObject<string | undefined>;
   canvasHistory: React.MutableRefObject<string[]>;
   setHistoryIndex: React.Dispatch<React.SetStateAction<number>>;
-};
+}
 
 export const useLoadState = ({
   canvas,
@@ -25,9 +25,7 @@ export const useLoadState = ({
       const data = JSON.parse(initialState.current);
 
       canvas.loadFromJSON(data, () => {
-        const currentState = JSON.stringify(
-          canvas.toJSON(JSON_KEYS),
-        );
+        const currentState = JSON.stringify(canvas.toJSON(JSON_KEYS));
 
         canvasHistory.current = [currentState];
         setHistoryIndex(0);
@@ -35,8 +33,7 @@ export const useLoadState = ({
       });
       initialized.current = true;
     }
-  }, 
-  [
+  }, [
     canvas,
     autoZoom,
     initialState, // no need, this is a ref

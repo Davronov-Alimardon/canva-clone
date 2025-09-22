@@ -1,8 +1,8 @@
-import { 
-  ActiveTool, 
-  Editor, 
-  STROKE_COLOR, 
-  STROKE_WIDTH
+import {
+  ActiveTool,
+  Editor,
+  STROKE_COLOR,
+  STROKE_WIDTH,
 } from "@/features/editor/types";
 import { ToolSidebarClose } from "@/features/editor/components/tool-sidebar-close";
 import { ToolSidebarHeader } from "@/features/editor/components/tool-sidebar-header";
@@ -17,7 +17,7 @@ interface DrawSidebarProps {
   editor: Editor | undefined;
   activeTool: ActiveTool;
   onChangeActiveTool: (tool: ActiveTool) => void;
-};
+}
 
 export const DrawSidebar = ({
   editor,
@@ -53,19 +53,14 @@ export const DrawSidebar = ({
       />
       <ScrollArea>
         <div className="p-4 space-y-6 border-b">
-          <Label className="text-sm">
-            Brush width
-          </Label>
+          <Label className="text-sm">Brush width</Label>
           <Slider
             value={[widthValue]}
             onValueChange={(values) => onWidthChange(values[0])}
           />
         </div>
         <div className="p-4 space-y-6">
-          <ColorPicker
-            value={colorValue}
-            onChange={onColorChange}
-          />
+          <ColorPicker value={colorValue} onChange={onColorChange} />
         </div>
       </ScrollArea>
       <ToolSidebarClose onClick={onClose} />

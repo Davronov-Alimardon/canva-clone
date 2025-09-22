@@ -17,7 +17,7 @@ interface AiSidebarProps {
   editor: Editor | undefined;
   activeTool: ActiveTool;
   onChangeActiveTool: (tool: ActiveTool) => void;
-};
+}
 
 export const AiSidebar = ({
   editor,
@@ -29,9 +29,7 @@ export const AiSidebar = ({
 
   const [value, setValue] = useState("");
 
-  const onSubmit = (
-    e: React.FormEvent<HTMLFormElement>
-  ) => {
+  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (shouldBlock) {
@@ -39,11 +37,14 @@ export const AiSidebar = ({
       return;
     }
 
-    mutation.mutate({ prompt: value }, {
-      onSuccess: ({ data }) => {
-        editor?.addImage(data);
-      }
-    });
+    mutation.mutate(
+      { prompt: value },
+      {
+        onSuccess: ({ data }) => {
+          editor?.addImage(data);
+        },
+      },
+    );
   };
 
   const onClose = () => {
@@ -57,10 +58,7 @@ export const AiSidebar = ({
         activeTool === "ai" ? "visible" : "hidden",
       )}
     >
-      <ToolSidebarHeader
-        title="AI"
-        description="Generate an image using AI"
-      />
+      <ToolSidebarHeader title="AI" description="Generate an image using AI" />
       <ScrollArea>
         <form onSubmit={onSubmit} className="p-4 space-y-6">
           <Textarea

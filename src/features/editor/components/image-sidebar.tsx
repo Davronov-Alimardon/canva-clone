@@ -18,7 +18,11 @@ interface ImageSidebarProps {
   onChangeActiveTool: (tool: ActiveTool) => void;
 }
 
-export const ImageSidebar = ({ editor, activeTool, onChangeActiveTool }: ImageSidebarProps) => {
+export const ImageSidebar = ({
+  editor,
+  activeTool,
+  onChangeActiveTool,
+}: ImageSidebarProps) => {
   const { data, isLoading, isError } = useGetImages();
 
   const onClose = () => {
@@ -29,10 +33,13 @@ export const ImageSidebar = ({ editor, activeTool, onChangeActiveTool }: ImageSi
     <aside
       className={cn(
         "bg-white relative border-r z-[40] w-[360px] h-full flex flex-col",
-        activeTool === "images" ? "visible" : "hidden"
+        activeTool === "images" ? "visible" : "hidden",
       )}
     >
-      <ToolSidebarHeader title="Images" description="Add images to your canvas" />
+      <ToolSidebarHeader
+        title="Images"
+        description="Add images to your canvas"
+      />
       <div className="p-4 border-b">
         <UploadButton
           appearance={{
@@ -56,7 +63,9 @@ export const ImageSidebar = ({ editor, activeTool, onChangeActiveTool }: ImageSi
       {isError && (
         <div className="flex flex-col gap-y-4 items-center justify-center flex-1">
           <AlertTriangle className="size-4 text-muted-foreground" />
-          <p className="text-muted-foreground text-xs">Failed to fetch images</p>
+          <p className="text-muted-foreground text-xs">
+            Failed to fetch images
+          </p>
         </div>
       )}
       <ScrollArea>

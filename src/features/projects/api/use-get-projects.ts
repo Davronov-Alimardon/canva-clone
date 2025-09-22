@@ -3,7 +3,10 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 
 import { client } from "@/lib/hono";
 
-export type ResponseType = InferResponseType<typeof client.api.projects["$get"], 200>;
+export type ResponseType = InferResponseType<
+  (typeof client.api.projects)["$get"],
+  200
+>;
 
 export const useGetProjects = () => {
   const query = useInfiniteQuery<ResponseType, Error>({

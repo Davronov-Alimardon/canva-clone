@@ -6,7 +6,7 @@ interface UseCanvasEventsProps {
   canvas: fabric.Canvas | null;
   setSelectedObjects: (objects: fabric.Object[]) => void;
   clearSelectionCallback?: () => void;
-};
+}
 
 export const useCanvasEvents = ({
   save,
@@ -41,11 +41,10 @@ export const useCanvasEvents = ({
         canvas.off("selection:cleared");
       }
     };
-  },
-  [
+  }, [
     save,
     canvas,
     clearSelectionCallback,
-    setSelectedObjects // No need for this, this is from setState
+    setSelectedObjects, // No need for this, this is from setState
   ]);
 };

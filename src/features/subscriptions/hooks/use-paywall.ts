@@ -2,10 +2,8 @@ import { useSubscriptionModal } from "@/features/subscriptions/store/use-subscri
 import { useGetSubscription } from "@/features/subscriptions/api/use-get-subscription";
 
 export const usePaywall = () => {
-  const { 
-    data: subscription,
-    isLoading: isLoadingSubscription,
-  } = useGetSubscription();
+  const { data: subscription, isLoading: isLoadingSubscription } =
+    useGetSubscription();
 
   const subscriptionModal = useSubscriptionModal();
 

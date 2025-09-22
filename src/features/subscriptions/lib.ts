@@ -7,11 +7,7 @@ export const checkIsActive = (
 ) => {
   let active = false;
 
-  if (
-    subscription &&
-    subscription.priceId &&
-    subscription.currentPeriodEnd
-  ) {
+  if (subscription && subscription.priceId && subscription.currentPeriodEnd) {
     active = subscription.currentPeriodEnd.getTime() + DAY_IN_MS > Date.now();
   }
 

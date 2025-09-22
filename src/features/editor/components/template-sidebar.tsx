@@ -3,14 +3,14 @@ import { AlertTriangle, Loader, Crown } from "lucide-react";
 
 import { usePaywall } from "@/features/subscriptions/hooks/use-paywall";
 
-import { 
-  ActiveTool, 
-  Editor,
-} from "@/features/editor/types";
+import { ActiveTool, Editor } from "@/features/editor/types";
 import { ToolSidebarClose } from "@/features/editor/components/tool-sidebar-close";
 import { ToolSidebarHeader } from "@/features/editor/components/tool-sidebar-header";
 
-import { ResponseType, useGetTemplates } from "@/features/projects/api/use-get-templates";
+import {
+  ResponseType,
+  useGetTemplates,
+} from "@/features/projects/api/use-get-templates";
 
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -20,7 +20,7 @@ interface TemplateSidebarProps {
   editor: Editor | undefined;
   activeTool: ActiveTool;
   onChangeActiveTool: (tool: ActiveTool) => void;
-};
+}
 
 export const TemplateSidebar = ({
   editor,
@@ -31,8 +31,8 @@ export const TemplateSidebar = ({
 
   const [ConfirmDialog, confirm] = useConfirm(
     "Are you sure?",
-    "You are about to replace the current project with this template."
-  )
+    "You are about to replace the current project with this template.",
+  );
 
   const { data, isLoading, isError } = useGetTemplates({
     limit: "20",
@@ -84,35 +84,34 @@ export const TemplateSidebar = ({
       <ScrollArea>
         <div className="p-4">
           <div className="grid grid-cols-2 gap-4">
-            {data && data.map((template) => {
-              return (
-                <button
-                  style={{ 
-                    aspectRatio: `${template.width}/${template.height}`
-                  }}
-                  onClick={() => onClick(template)}
-                  key={template.id}
-                  className="relative w-full group hover:opacity-75 transition bg-muted rounded-sm overflow-hidden border"
-                >
-                  <Image
-                    fill
-                    src={template.thumbnailUrl || ""}
-                    alt={template.name || "Template"}
-                    className="object-cover"
-                  />
-                  {template.isPro && (
-                    <div className="absolute top-2 right-2 size-8 items-center flex justify-center bg-black/50 rounded-full">
-                      <Crown className="size-4 fill-yellow-500 text-yellow-500" />
-                    </div>
-                  )}
-                  <div
-                    className="opacity-0 group-hover:opacity-100 absolute left-0 bottom-0 w-full text-[10px] truncate text-white p-1 bg-black/50 text-left"
+            {data &&
+              data.map((template) => {
+                return (
+                  <button
+                    style={{
+                      aspectRatio: `${template.width}/${template.height}`,
+                    }}
+                    onClick={() => onClick(template)}
+                    key={template.id}
+                    className="relative w-full group hover:opacity-75 transition bg-muted rounded-sm overflow-hidden border"
                   >
-                    {template.name}
-                  </div>
-                </button>
-              )
-            })}
+                    <Image
+                      fill
+                      src={template.thumbnailUrl || ""}
+                      alt={template.name || "Template"}
+                      className="object-cover"
+                    />
+                    {template.isPro && (
+                      <div className="absolute top-2 right-2 size-8 items-center flex justify-center bg-black/50 rounded-full">
+                        <Crown className="size-4 fill-yellow-500 text-yellow-500" />
+                      </div>
+                    )}
+                    <div className="opacity-0 group-hover:opacity-100 absolute left-0 bottom-0 w-full text-[10px] truncate text-white p-1 bg-black/50 text-left">
+                      {template.name}
+                    </div>
+                  </button>
+                );
+              })}
           </div>
         </div>
       </ScrollArea>

@@ -2,11 +2,9 @@ import { ChevronsLeft } from "lucide-react";
 
 interface ToolSidebarCloseProps {
   onClick: () => void;
-};
+}
 
-export const ToolSidebarClose = ({
-  onClick,
-}: ToolSidebarCloseProps) => {
+export const ToolSidebarClose = ({ onClick }: ToolSidebarCloseProps) => {
   return (
     <button
       onClick={onClick}

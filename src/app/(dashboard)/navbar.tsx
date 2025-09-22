@@ -1,4 +1,4 @@
-import { UserButton } from "@/features/auth/components/user-button"
+import { UserButton } from "@/features/auth/components/user-button";
 
 export const Navbar = () => {
   return (

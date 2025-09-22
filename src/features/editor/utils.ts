@@ -1,6 +1,6 @@
 import { uuid } from "uuidv4";
 import { fabric } from "fabric";
-import type { RGBColor } from "react-color";
+import type { RgbaColor } from "@uiw/react-color";
 
 export function transformText(objects: any) {
   if (!objects) return;
@@ -9,10 +9,10 @@ export function transformText(objects: any) {
     if (item.objects) {
       transformText(item.objects);
     } else {
-      item.type === "text" && (item.type === "textbox");
+      item.type === "text" && item.type === "textbox";
     }
   });
-};
+}
 
 export function downloadFile(file: string, type: string) {
   const anchorElement = document.createElement("a");
@@ -22,13 +22,13 @@ export function downloadFile(file: string, type: string) {
   document.body.appendChild(anchorElement);
   anchorElement.click();
   anchorElement.remove();
-};
+}
 
 export function isTextType(type: string | undefined) {
   return type === "text" || type === "i-text" || type === "textbox";
-};
+}
 
-export function rgbaObjectToString(rgba: RGBColor | "transparent") {
+export function rgbaObjectToString(rgba: RgbaColor | "transparent") {
   if (rgba === "transparent") {
     return `rgba(0,0,0,0)`;
   }
@@ -36,7 +36,7 @@ export function rgbaObjectToString(rgba: RGBColor | "transparent") {
   const alpha = rgba.a === undefined ? 1 : rgba.a;
 
   return `rgba(${rgba.r}, ${rgba.g}, ${rgba.b}, ${alpha})`;
-};
+}
 
 export const createFilter = (value: string) => {
   let effect;
@@ -97,7 +97,7 @@ export const createFilter = (value: string) => {
       // @ts-ignore
       effect = new fabric.Image.filters.RemoveColor({
         threshold: 0.2,
-        distance: 0.5
+        distance: 0.5,
       });
       break;
     case "blacknwhite":
@@ -106,18 +106,18 @@ export const createFilter = (value: string) => {
       break;
     case "vibrance":
       // @ts-ignore
-      effect = new fabric.Image.filters.Vibrance({ 
+      effect = new fabric.Image.filters.Vibrance({
         vibrance: 1,
       });
       break;
     case "blendcolor":
-      effect = new fabric.Image.filters.BlendColor({ 
+      effect = new fabric.Image.filters.BlendColor({
         color: "#00ff00",
         mode: "multiply",
       });
       break;
     case "huerotate":
-      effect = new fabric.Image.filters.HueRotation({ 
+      effect = new fabric.Image.filters.HueRotation({
         rotation: 0.5,
       });
       break;
@@ -127,7 +127,7 @@ export const createFilter = (value: string) => {
     case "gamma":
       // @ts-ignore
       effect = new fabric.Image.filters.Gamma({
-        gamma: [1, 0.5, 2.1]
+        gamma: [1, 0.5, 2.1],
       });
     case "saturation":
       effect = new fabric.Image.filters.Saturation({
@@ -137,7 +137,7 @@ export const createFilter = (value: string) => {
     default:
       effect = null;
       return;
-  };
+  }
 
   return effect;
 };

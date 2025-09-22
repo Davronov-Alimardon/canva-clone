@@ -10,7 +10,7 @@ interface FillColorSidebarProps {
   editor: Editor | undefined;
   activeTool: ActiveTool;
   onChangeActiveTool: (tool: ActiveTool) => void;
-};
+}
 
 export const FillColorSidebar = ({
   editor,
@@ -40,10 +40,7 @@ export const FillColorSidebar = ({
       />
       <ScrollArea>
         <div className="p-4 space-y-6">
-          <ColorPicker
-            value={value}
-            onChange={onChange}
-          />
+          <ColorPicker value={value} onChange={onChange} />
         </div>
       </ScrollArea>
       <ToolSidebarClose onClick={onClose} />

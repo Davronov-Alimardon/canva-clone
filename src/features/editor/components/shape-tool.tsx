@@ -7,18 +7,15 @@ interface ShapeToolProps {
   onClick: () => void;
   icon: LucideIcon | IconType;
   iconClassName?: string;
-};
+}
 
 export const ShapeTool = ({
   onClick,
   icon: Icon,
-  iconClassName
+  iconClassName,
 }: ShapeToolProps) => {
   return (
-    <button
-      onClick={onClick}
-      className="aspect-square border rounded-md p-5"
-    >
+    <button onClick={onClick} className="aspect-square border rounded-md p-5">
       <Icon className={cn("h-full w-full", iconClassName)} />
     </button>
   );

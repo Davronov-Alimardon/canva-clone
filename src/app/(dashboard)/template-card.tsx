@@ -12,7 +12,7 @@ interface TemplateCardProps {
   width: number;
   height: number;
   isPro: boolean | null;
-};
+}
 
 export const TemplateCard = ({
   imageSrc,
@@ -22,7 +22,7 @@ export const TemplateCard = ({
   description,
   height,
   width,
-  isPro
+  isPro,
 }: TemplateCardProps) => {
   return (
     <button
@@ -30,12 +30,13 @@ export const TemplateCard = ({
       disabled={disabled}
       className={cn(
         "space-y-2 group text-left transition flex flex-col",
-        disabled ? "cursor-not-allowed opacity-75" : "cursor-pointer"
+        disabled ? "cursor-not-allowed opacity-75" : "cursor-pointer",
       )}
     >
       <div
-      style={{ aspectRatio: `${width}/${height}` }}
-      className="relative rounded-xl h-full w-full overflow-hidden border">
+        style={{ aspectRatio: `${width}/${height}` }}
+        className="relative rounded-xl h-full w-full overflow-hidden border"
+      >
         <Image
           fill
           src={imageSrc}
@@ -48,19 +49,15 @@ export const TemplateCard = ({
           </div>
         )}
         <div className="opacity-0 group-hover:opacity-100 transition absolute inset-0 bg-black/50 flex items-center justify-center rounded-xl backdrop-filter backdrop-blur-sm">
-          <p className="text-white font-medium">
-            Open in editor
-          </p>
+          <p className="text-white font-medium">Open in editor</p>
         </div>
       </div>
       <div className="space-y-1">
-        <p className="text-sm font-medium">
-          {title}
-        </p>
+        <p className="text-sm font-medium">{title}</p>
         <p className="text-xs text-muted-foreground opacity-0 group-hover:opacity-75 transition">
           {description}
         </p>
       </div>
     </button>
-  )
-}
+  );
+};

@@ -1,8 +1,4 @@
-import { 
-  ActiveTool, 
-  Editor,
-  fonts, 
-} from "@/features/editor/types";
+import { ActiveTool, Editor, fonts } from "@/features/editor/types";
 import { ToolSidebarClose } from "@/features/editor/components/tool-sidebar-close";
 import { ToolSidebarHeader } from "@/features/editor/components/tool-sidebar-header";
 
@@ -14,7 +10,7 @@ interface FontSidebarProps {
   editor: Editor | undefined;
   activeTool: ActiveTool;
   onChangeActiveTool: (tool: ActiveTool) => void;
-};
+}
 
 export const FontSidebar = ({
   editor,
@@ -34,10 +30,7 @@ export const FontSidebar = ({
         activeTool === "font" ? "visible" : "hidden",
       )}
     >
-      <ToolSidebarHeader
-        title="Font"
-        description="Change the text font"
-      />
+      <ToolSidebarHeader title="Font" description="Change the text font" />
       <ScrollArea>
         <div className="p-4 space-y-1 border-b">
           {fonts.map((font) => (
@@ -52,7 +45,7 @@ export const FontSidebar = ({
               style={{
                 fontFamily: font,
                 fontSize: "16px",
-                padding: "8px 16px"
+                padding: "8px 16px",
               }}
               onClick={() => editor?.changeFontFamily(font)}
             >

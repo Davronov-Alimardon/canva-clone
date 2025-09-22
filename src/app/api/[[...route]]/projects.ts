@@ -26,11 +26,8 @@ const app = new Hono()
         .from(projects)
         .where(eq(projects.isTemplate, true))
         .limit(limit)
-        .offset((page -1) * limit)
-        .orderBy(
-          asc(projects.isPro),
-          desc(projects.updatedAt),
-        );
+        .offset((page - 1) * limit)
+        .orderBy(asc(projects.isPro), desc(projects.updatedAt));
 
       return c.json({ data });
     },
@@ -49,12 +46,7 @@ const app = new Hono()
 
       const data = await db
         .delete(projects)
-        .where(
-          and(
-            eq(projects.id, id),
-            eq(projects.userId, auth.token.id),
-          ),
-        )
+        .where(and(eq(projects.id, id), eq(projects.userId, auth.token.id)))
         .returning();
 
       if (data.length === 0) {
@@ -79,15 +71,10 @@ const app = new Hono()
       const data = await db
         .select()
         .from(projects)
-        .where(
-          and(
-            eq(projects.id, id),
-            eq(projects.userId, auth.token.id),
-          ),
-        );
+        .where(and(eq(projects.id, id), eq(projects.userId, auth.token.id)));
 
       if (data.length === 0) {
-        return c.json({ error:" Not found" }, 404);
+        return c.json({ error: " Not found" }, 404);
       }
 
       const project = data[0];
@@ -132,7 +119,7 @@ const app = new Hono()
         .where(eq(projects.userId, auth.token.id))
         .limit(limit)
         .offset((page - 1) * limit)
-        .orderBy(desc(projects.updatedAt))
+        .orderBy(desc(projects.updatedAt));
 
       return c.json({
         data,
@@ -143,10 +130,7 @@ const app = new Hono()
   .patch(
     "/:id",
     verifyAuth(),
-    zValidator(
-      "param",
-      z.object({ id: z.string() }),
-    ),
+    zValidator("param", z.object({ id: z.string() })),
     zValidator(
       "json",
       projectsInsertSchema
@@ -156,7 +140,7 @@ const app = new Hono()
           createdAt: true,
           updatedAt: true,
         })
-        .partial()
+        .partial(),
     ),
     async (c) => {
       const auth = c.get("authUser");
@@ -173,12 +157,7 @@ const app = new Hono()
           ...values,
           updatedAt: new Date(),
         })
-        .where(
-          and(
-            eq(projects.id, id),
-            eq(projects.userId, auth.token.id),
-          ),
-        )
+        .where(and(eq(projects.id, id), eq(projects.userId, auth.token.id)))
         .returning();
 
       if (data.length === 0) {
@@ -203,12 +182,7 @@ const app = new Hono()
       const data = await db
         .select()
         .from(projects)
-        .where(
-          and(
-            eq(projects.id, id),
-            eq(projects.userId, auth.token.id)
-          )
-        );
+        .where(and(eq(projects.id, id), eq(projects.userId, auth.token.id)));
 
       if (data.length === 0) {
         return c.json({ error: "Not found" }, 404);

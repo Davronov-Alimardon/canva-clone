@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 
 interface FooterProps {
   editor: Editor | undefined;
-};
+}
 
 export const Footer = ({ editor }: FooterProps) => {
   return (

@@ -7,10 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ResponseType } from "@/features/projects/api/use-get-project";
 import { useUpdateProject } from "@/features/projects/api/use-update-project";
 
-import { 
-  ActiveTool, 
-  selectionDependentTools
-} from "@/features/editor/types";
+import { ActiveTool, selectionDependentTools } from "@/features/editor/types";
 import { Navbar } from "@/features/editor/components/navbar";
 import { Footer } from "@/features/editor/components/footer";
 import { useEditor } from "@/features/editor/hooks/use-editor";
@@ -33,23 +30,18 @@ import { SettingsSidebar } from "@/features/editor/components/settings-sidebar";
 
 interface EditorProps {
   initialData: ResponseType["data"];
-};
+}
 
 export const Editor = ({ initialData }: EditorProps) => {
   const { mutate } = useUpdateProject(initialData.id);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedSave = useCallback(
-    debounce(
-      (values: { 
-        json: string,
-        height: number,
-        width: number,
-      }) => {
-        mutate(values);
-    },
-    500
-  ), [mutate]);
+    debounce((values: { json: string; height: number; width: number }) => {
+      mutate(values);
+    }, 500),
+    [mutate],
+  );
 
   const [activeTool, setActiveTool] = useState<ActiveTool>("select");
 
@@ -67,21 +59,24 @@ export const Editor = ({ initialData }: EditorProps) => {
     saveCallback: debouncedSave,
   });
 
-  const onChangeActiveTool = useCallback((tool: ActiveTool) => {
-    if (tool === "draw") {
-      editor?.enableDrawingMode();
-    }
+  const onChangeActiveTool = useCallback(
+    (tool: ActiveTool) => {
+      if (tool === "draw") {
+        editor?.enableDrawingMode();
+      }
 
-    if (activeTool === "draw") {
-      editor?.disableDrawingMode();
-    }
+      if (activeTool === "draw") {
+        editor?.disableDrawingMode();
+      }
 
-    if (tool === activeTool) {
-      return setActiveTool("select");
-    }
-    
-    setActiveTool(tool);
-  }, [activeTool, editor]);
+      if (tool === activeTool) {
+        return setActiveTool("select");
+      }
+
+      setActiveTool(tool);
+    },
+    [activeTool, editor],
+  );
 
   const canvasRef = useRef(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -192,7 +187,10 @@ export const Editor = ({ initialData }: EditorProps) => {
             onChangeActiveTool={onChangeActiveTool}
             key={JSON.stringify(editor?.canvas.getActiveObject())}
           />
-          <div className="flex-1 h-[calc(100%-124px)] bg-muted" ref={containerRef}>
+          <div
+            className="flex-1 h-[calc(100%-124px)] bg-muted"
+            ref={containerRef}
+          >
             <canvas ref={canvasRef} />
           </div>
           <Footer editor={editor} />

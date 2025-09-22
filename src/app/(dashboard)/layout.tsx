@@ -3,10 +3,10 @@ import { Sidebar } from "./sidebar";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-};
+}
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
-  return ( 
+  return (
     <div className="bg-muted h-full">
       <Sidebar />
       <div className="lg:pl-[300px] flex flex-col h-full">
@@ -18,5 +18,5 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     </div>
   );
 };
- 
+
 export default DashboardLayout;

@@ -1,8 +1,4 @@
-import { 
-  ActiveTool, 
-  Editor,
-  filters,
-} from "@/features/editor/types";
+import { ActiveTool, Editor, filters } from "@/features/editor/types";
 import { ToolSidebarClose } from "@/features/editor/components/tool-sidebar-close";
 import { ToolSidebarHeader } from "@/features/editor/components/tool-sidebar-header";
 
@@ -14,7 +10,7 @@ interface FilterSidebarProps {
   editor: Editor | undefined;
   activeTool: ActiveTool;
   onChangeActiveTool: (tool: ActiveTool) => void;
-};
+}
 
 export const FilterSidebar = ({
   editor,

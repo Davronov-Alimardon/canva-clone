@@ -14,5 +14,4 @@ export default async function Home() {
       <ProjectsSection />
     </div>
   );
-};
-
+}

@@ -19,10 +19,13 @@ const app = new Hono()
       const { image } = c.req.valid("json");
 
       const input = {
-        image: image
+        image: image,
       };
-    
-      const output: unknown = await replicate.run("cjwbw/rembg:fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b81b330ec5c003", { input });
+
+      const output: unknown = await replicate.run(
+        "cjwbw/rembg:fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b81b330ec5c003",
+        { input },
+      );
 
       const res = output as string;
 
@@ -49,11 +52,13 @@ const app = new Hono()
         output_format: "webp",
         output_quality: 90,
         negative_prompt: "",
-        prompt_strength: 0.85
+        prompt_strength: 0.85,
       };
-      
-      const output = await replicate.run("stability-ai/stable-diffusion-3", { input });
-      
+
+      const output = await replicate.run("stability-ai/stable-diffusion-3", {
+        input,
+      });
+
       const res = output as Array<string>;
 
       return c.json({ data: res[0] });

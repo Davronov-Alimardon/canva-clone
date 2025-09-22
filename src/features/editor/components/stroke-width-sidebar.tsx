@@ -1,8 +1,8 @@
-import { 
-  ActiveTool, 
-  Editor, 
-  STROKE_DASH_ARRAY, 
-  STROKE_WIDTH
+import {
+  ActiveTool,
+  Editor,
+  STROKE_DASH_ARRAY,
+  STROKE_WIDTH,
 } from "@/features/editor/types";
 import { ToolSidebarClose } from "@/features/editor/components/tool-sidebar-close";
 import { ToolSidebarHeader } from "@/features/editor/components/tool-sidebar-header";
@@ -17,7 +17,7 @@ interface StrokeWidthSidebarProps {
   editor: Editor | undefined;
   activeTool: ActiveTool;
   onChangeActiveTool: (tool: ActiveTool) => void;
-};
+}
 
 export const StrokeWidthSidebar = ({
   editor,
@@ -37,7 +37,7 @@ export const StrokeWidthSidebar = ({
 
   const onChangeStrokeType = (value: number[]) => {
     editor?.changeStrokeDashArray(value);
-  }
+  };
 
   return (
     <aside
@@ -52,28 +52,24 @@ export const StrokeWidthSidebar = ({
       />
       <ScrollArea>
         <div className="p-4 space-y-4 border-b">
-          <Label className="text-sm">
-            Stroke width
-          </Label>
+          <Label className="text-sm">Stroke width</Label>
           <Slider
             value={[widthValue]}
             onValueChange={(values) => onChangeStrokeWidth(values[0])}
           />
         </div>
         <div className="p-4 space-y-4 border-b">
-          <Label className="text-sm">
-            Stroke type
-          </Label>
+          <Label className="text-sm">Stroke type</Label>
           <Button
             onClick={() => onChangeStrokeType([])}
             variant="secondary"
             size="lg"
             className={cn(
               "w-full h-16 justify-start text-left",
-              JSON.stringify(typeValue) === `[]` && "border-2 border-blue-500"
+              JSON.stringify(typeValue) === `[]` && "border-2 border-blue-500",
             )}
             style={{
-              padding: "8px 16px"
+              padding: "8px 16px",
             }}
           >
             <div className="w-full border-black rounded-full border-4" />
@@ -84,10 +80,11 @@ export const StrokeWidthSidebar = ({
             size="lg"
             className={cn(
               "w-full h-16 justify-start text-left",
-              JSON.stringify(typeValue) === `[5,5]` && "border-2 border-blue-500"
+              JSON.stringify(typeValue) === `[5,5]` &&
+                "border-2 border-blue-500",
             )}
             style={{
-              padding: "8px 16px"
+              padding: "8px 16px",
             }}
           >
             <div className="w-full border-black rounded-full border-4 border-dashed" />

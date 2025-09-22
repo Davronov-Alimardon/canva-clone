@@ -1,33 +1,28 @@
 import { useState } from "react";
 
-import { 
-  FaBold, 
-  FaItalic, 
-  FaStrikethrough, 
-  FaUnderline
-} from "react-icons/fa";
+import { FaBold, FaItalic, FaStrikethrough, FaUnderline } from "react-icons/fa";
 import { TbColorFilter } from "react-icons/tb";
 import { BsBorderWidth } from "react-icons/bs";
 import { RxTransparencyGrid } from "react-icons/rx";
-import { 
-  ArrowUp, 
-  ArrowDown, 
-  ChevronDown, 
-  AlignLeft, 
-  AlignCenter, 
+import {
+  ArrowUp,
+  ArrowDown,
+  ChevronDown,
+  AlignLeft,
+  AlignCenter,
   AlignRight,
   Trash,
   SquareSplitHorizontal,
-  Copy
+  Copy,
 } from "lucide-react";
 
 import { isTextType } from "@/features/editor/utils";
 import { FontSizeInput } from "@/features/editor/components/font-size-input";
-import { 
-  ActiveTool, 
-  Editor, 
-  FONT_SIZE, 
-  FONT_WEIGHT
+import {
+  ActiveTool,
+  Editor,
+  FONT_SIZE,
+  FONT_WEIGHT,
 } from "@/features/editor/types";
 
 import { cn } from "@/lib/utils";
@@ -38,7 +33,7 @@ interface ToolbarProps {
   editor: Editor | undefined;
   activeTool: ActiveTool;
   onChangeActiveTool: (tool: ActiveTool) => void;
-};
+}
 
 export const Toolbar = ({
   editor,
@@ -53,7 +48,7 @@ export const Toolbar = ({
   const initialFontLinethrough = editor?.getActiveFontLinethrough();
   const initialFontUnderline = editor?.getActiveFontUnderline();
   const initialTextAlign = editor?.getActiveTextAlign();
-  const initialFontSize = editor?.getActiveFontSize() || FONT_SIZE
+  const initialFontSize = editor?.getActiveFontSize() || FONT_SIZE;
 
   const [properties, setProperties] = useState({
     fillColor: initialFillColor,
@@ -169,9 +164,7 @@ export const Toolbar = ({
               onClick={() => onChangeActiveTool("fill")}
               size="icon"
               variant="ghost"
-              className={cn(
-                activeTool === "fill" && "bg-gray-100"
-              )}
+              className={cn(activeTool === "fill" && "bg-gray-100")}
             >
               <div
                 className="rounded-sm size-4 border"
@@ -188,9 +181,7 @@ export const Toolbar = ({
               onClick={() => onChangeActiveTool("stroke-color")}
               size="icon"
               variant="ghost"
-              className={cn(
-                activeTool === "stroke-color" && "bg-gray-100"
-              )}
+              className={cn(activeTool === "stroke-color" && "bg-gray-100")}
             >
               <div
                 className="rounded-sm size-4 border-2 bg-white"
@@ -207,9 +198,7 @@ export const Toolbar = ({
               onClick={() => onChangeActiveTool("stroke-width")}
               size="icon"
               variant="ghost"
-              className={cn(
-                activeTool === "stroke-width" && "bg-gray-100"
-              )}
+              className={cn(activeTool === "stroke-width" && "bg-gray-100")}
             >
               <BsBorderWidth className="size-4" />
             </Button>
@@ -225,7 +214,7 @@ export const Toolbar = ({
               variant="ghost"
               className={cn(
                 "w-auto px-2 text-sm",
-                activeTool === "font" && "bg-gray-100"
+                activeTool === "font" && "bg-gray-100",
               )}
             >
               <div className="max-w-[100px] truncate">
@@ -243,9 +232,7 @@ export const Toolbar = ({
               onClick={toggleBold}
               size="icon"
               variant="ghost"
-              className={cn(
-                properties.fontWeight > 500 && "bg-gray-100"
-              )}
+              className={cn(properties.fontWeight > 500 && "bg-gray-100")}
             >
               <FaBold className="size-4" />
             </Button>
@@ -259,9 +246,7 @@ export const Toolbar = ({
               onClick={toggleItalic}
               size="icon"
               variant="ghost"
-              className={cn(
-                properties.fontStyle === "italic" && "bg-gray-100"
-              )}
+              className={cn(properties.fontStyle === "italic" && "bg-gray-100")}
             >
               <FaItalic className="size-4" />
             </Button>
@@ -275,9 +260,7 @@ export const Toolbar = ({
               onClick={toggleUnderline}
               size="icon"
               variant="ghost"
-              className={cn(
-                properties.fontUnderline && "bg-gray-100"
-              )}
+              className={cn(properties.fontUnderline && "bg-gray-100")}
             >
               <FaUnderline className="size-4" />
             </Button>
@@ -291,9 +274,7 @@ export const Toolbar = ({
               onClick={toggleLinethrough}
               size="icon"
               variant="ghost"
-              className={cn(
-                properties.fontLinethrough && "bg-gray-100"
-              )}
+              className={cn(properties.fontLinethrough && "bg-gray-100")}
             >
               <FaStrikethrough className="size-4" />
             </Button>
@@ -307,9 +288,7 @@ export const Toolbar = ({
               onClick={() => onChangeTextAlign("left")}
               size="icon"
               variant="ghost"
-              className={cn(
-                properties.textAlign === "left" && "bg-gray-100"
-              )}
+              className={cn(properties.textAlign === "left" && "bg-gray-100")}
             >
               <AlignLeft className="size-4" />
             </Button>
@@ -323,9 +302,7 @@ export const Toolbar = ({
               onClick={() => onChangeTextAlign("center")}
               size="icon"
               variant="ghost"
-              className={cn(
-                properties.textAlign === "center" && "bg-gray-100"
-              )}
+              className={cn(properties.textAlign === "center" && "bg-gray-100")}
             >
               <AlignCenter className="size-4" />
             </Button>
@@ -339,9 +316,7 @@ export const Toolbar = ({
               onClick={() => onChangeTextAlign("right")}
               size="icon"
               variant="ghost"
-              className={cn(
-                properties.textAlign === "right" && "bg-gray-100"
-              )}
+              className={cn(properties.textAlign === "right" && "bg-gray-100")}
             >
               <AlignRight className="size-4" />
             </Button>
@@ -350,10 +325,10 @@ export const Toolbar = ({
       )}
       {isText && (
         <div className="flex items-center h-full justify-center">
-         <FontSizeInput
+          <FontSizeInput
             value={properties.fontSize}
             onChange={onChangeFontSize}
-         />
+          />
         </div>
       )}
       {isImage && (
@@ -363,9 +338,7 @@ export const Toolbar = ({
               onClick={() => onChangeActiveTool("filter")}
               size="icon"
               variant="ghost"
-              className={cn(
-                activeTool === "filter" && "bg-gray-100"
-              )}
+              className={cn(activeTool === "filter" && "bg-gray-100")}
             >
               <TbColorFilter className="size-4" />
             </Button>
@@ -379,9 +352,7 @@ export const Toolbar = ({
               onClick={() => onChangeActiveTool("remove-bg")}
               size="icon"
               variant="ghost"
-              className={cn(
-                activeTool === "remove-bg" && "bg-gray-100"
-              )}
+              className={cn(activeTool === "remove-bg" && "bg-gray-100")}
             >
               <SquareSplitHorizontal className="size-4" />
             </Button>
