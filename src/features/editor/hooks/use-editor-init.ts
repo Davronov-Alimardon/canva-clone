@@ -34,8 +34,8 @@ export function useEditorInit(
     const containerWidth = initialContainer.offsetWidth;
     const containerHeight = initialContainer.offsetHeight;
     
-    const targetWidth = containerWidth > 0 ? containerWidth : initialWidth.current;
-    const targetHeight = containerHeight > 0 ? containerHeight : initialHeight.current;
+    const targetWidth = initialWidth.current > 0 ? initialWidth.current : containerWidth;
+    const targetHeight = initialHeight.current > 0 ? initialHeight.current : containerHeight;
 
     const workspace = new fabric.Rect({
       width: targetWidth,
