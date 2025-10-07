@@ -1,46 +1,88 @@
 import { fabric } from "fabric";
 import { useCallback, useRef } from "react";
 
-interface UseClipboardProps {
-  canvas: fabric.Canvas | null;
+interface FabricObjectWithLayer extends fabric.Object {
+  layerId?: string;
 }
 
-export const useClipboard = ({ canvas }: UseClipboardProps) => {
-  const clipboard = useRef<any>(null);
+interface UseClipboardProps {
+  canvas: fabric.Canvas | null;
+  activeLayerId?: string;
+  onObjectsAdded?: (objects: fabric.Object[]) => void;
+}
 
+export function useClipboard({
+  canvas,
+  activeLayerId,
+  onObjectsAdded,
+}: UseClipboardProps) {
+  const clipboard = useRef<fabric.Object | fabric.ActiveSelection | null>(null);
+
+  // Copy selected object(s)
   const copy = useCallback(() => {
-    canvas?.getActiveObject()?.clone((cloned: any) => {
+    const activeObject = canvas?.getActiveObject();
+    if (!activeObject) return;
+
+    activeObject.clone((cloned: fabric.Object | fabric.ActiveSelection) => {
       clipboard.current = cloned;
     });
   }, [canvas]);
 
+  // Paste cloned object(s)
   const paste = useCallback(() => {
-    if (!clipboard.current) return;
+    if (!canvas || !clipboard.current) return;
 
-    clipboard.current.clone((clonedObj: any) => {
-      canvas?.discardActiveObject();
+    const stored = clipboard.current;
+
+    stored.clone((clonedObj: fabric.Object | fabric.ActiveSelection) => {
+      canvas.discardActiveObject();
+
+      const left = (clonedObj.left ?? 0) + 10;
+      const top = (clonedObj.top ?? 0) + 10;
+
       clonedObj.set({
-        left: clonedObj.left + 10,
-        top: clonedObj.top + 10,
+        left,
+        top,
         evented: true,
       });
 
-      if (clonedObj.type === "activeSelection") {
+      // If it’s an ActiveSelection (multiple objects)
+      if (clonedObj instanceof fabric.ActiveSelection) {
         clonedObj.canvas = canvas;
-        clonedObj.forEachObject((obj: any) => {
-          canvas?.add(obj);
-        });
-        clonedObj.setCoords();
-      } else {
-        canvas?.add(clonedObj);
-      }
 
-      clipboard.current.top += 10;
-      clipboard.current.left += 10;
-      canvas?.setActiveObject(clonedObj);
-      canvas?.requestRenderAll();
+        clonedObj.forEachObject((obj: fabric.Object) => {
+          const target: FabricObjectWithLayer = obj;
+          if (activeLayerId) {
+           target.layerId = activeLayerId;
+    }
+    canvas.add(target);
+  });
+
+  clonedObj.setCoords();
+} else {
+  const target: FabricObjectWithLayer = clonedObj;
+  if (activeLayerId) {
+    target.layerId = activeLayerId;
+  }
+  canvas.add(target);
+}
+
+      // Offset next paste slightly
+      stored.top = (stored.top ?? 0) + 10;
+      stored.left = (stored.left ?? 0) + 10;
+
+      canvas.setActiveObject(clonedObj);
+      canvas.requestRenderAll();
+
+      if (onObjectsAdded) {
+        const addedObjects =
+          clonedObj instanceof fabric.ActiveSelection
+            ? clonedObj.getObjects()
+            : [clonedObj];
+        onObjectsAdded(addedObjects);
+      }
     });
-  }, [canvas]);
+  }, [canvas, activeLayerId, onObjectsAdded]);
 
   return { copy, paste };
-};
+}

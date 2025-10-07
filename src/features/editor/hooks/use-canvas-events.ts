@@ -1,11 +1,17 @@
 import { fabric } from "fabric";
 import { useEffect } from "react";
+import { ActiveTool } from "../types";
 
 interface UseCanvasEventsProps {
   save: () => void;
   canvas: fabric.Canvas | null;
   setSelectedObjects: (objects: fabric.Object[]) => void;
   clearSelectionCallback?: () => void;
+  activeTool?: ActiveTool;
+}
+
+interface SelectionEvent extends fabric.IEvent<Event> {
+  selected?: fabric.Object[];
 }
 
 export const useCanvasEvents = ({
@@ -13,38 +19,41 @@ export const useCanvasEvents = ({
   canvas,
   setSelectedObjects,
   clearSelectionCallback,
-}: UseCanvasEventsProps) => {
+  activeTool
+}: UseCanvasEventsProps): void => {
   useEffect(() => {
-    if (canvas) {
-      canvas.on("object:added", () => save());
-      canvas.on("object:removed", () => save());
-      canvas.on("object:modified", () => save());
-      canvas.on("selection:created", (e) => {
-        setSelectedObjects(e.selected || []);
-      });
-      canvas.on("selection:updated", (e) => {
-        setSelectedObjects(e.selected || []);
-      });
-      canvas.on("selection:cleared", () => {
-        setSelectedObjects([]);
-        clearSelectionCallback?.();
-      });
-    }
+    if (!canvas) return;
 
-    return () => {
-      if (canvas) {
-        canvas.off("object:added");
-        canvas.off("object:removed");
-        canvas.off("object:modified");
-        canvas.off("selection:created");
-        canvas.off("selection:updated");
-        canvas.off("selection:cleared");
+    const handleSave = (): void => save();
+
+   const handleSelectionChange = (e: SelectionEvent): void => {
+      if (activeTool === "draw") return;
+      
+      if (Array.isArray(e.selected)) {
+        setSelectedObjects(e.selected);
       }
     };
-  }, [
-    save,
-    canvas,
-    clearSelectionCallback,
-    setSelectedObjects, // No need for this, this is from setState
-  ]);
+
+    const handleSelectionCleared = (): void => {
+      if (activeTool === "draw") return;
+      setSelectedObjects([]);
+      clearSelectionCallback?.();
+    };
+
+    canvas.on("object:added", handleSave);
+    canvas.on("object:removed", handleSave);
+    canvas.on("object:modified", handleSave);
+    canvas.on("selection:created", handleSelectionChange);
+    canvas.on("selection:updated", handleSelectionChange);
+    canvas.on("selection:cleared", handleSelectionCleared);
+
+    return () => {
+      canvas.off("object:added", handleSave);
+      canvas.off("object:removed", handleSave);
+      canvas.off("object:modified", handleSave);
+      canvas.off("selection:created", handleSelectionChange);
+      canvas.off("selection:updated", handleSelectionChange);
+      canvas.off("selection:cleared", handleSelectionCleared);
+    };
+  }, [canvas, save, setSelectedObjects, clearSelectionCallback, activeTool]);
 };

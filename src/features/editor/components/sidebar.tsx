@@ -22,11 +22,11 @@ export const Sidebar = ({ activeTool, onChangeActiveTool }: SidebarProps) => {
   return (
     <aside className="bg-white flex flex-col w-[100px] h-full border-r overflow-y-auto">
       <ul className="flex flex-col">
-        <SidebarItem
-          icon={LayoutTemplate}
-          label="Design"
-          isActive={activeTool === "templates"}
-          onClick={() => onChangeActiveTool("templates")}
+         <SidebarItem
+          icon={Sparkles}
+          label="AI"
+          isActive={activeTool === "ai"}
+          onClick={() => onChangeActiveTool("ai")}
         />
         <SidebarItem
           icon={ImageIcon}
@@ -41,22 +41,10 @@ export const Sidebar = ({ activeTool, onChangeActiveTool }: SidebarProps) => {
           onClick={() => onChangeActiveTool("text")}
         />
         <SidebarItem
-          icon={Shapes}
-          label="Shapes"
-          isActive={activeTool === "shapes"}
-          onClick={() => onChangeActiveTool("shapes")}
-        />
-        <SidebarItem
           icon={Pencil}
           label="Draw"
           isActive={activeTool === "draw"}
           onClick={() => onChangeActiveTool("draw")}
-        />
-        <SidebarItem
-          icon={Sparkles}
-          label="AI"
-          isActive={activeTool === "ai"}
-          onClick={() => onChangeActiveTool("ai")}
         />
         <SidebarItem
           icon={Settings}

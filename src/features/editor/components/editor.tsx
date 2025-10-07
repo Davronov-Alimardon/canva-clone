@@ -13,7 +13,6 @@ import { Footer } from "@/features/editor/components/footer";
 import { useEditor } from "@/features/editor/hooks/use-editor";
 import { Sidebar } from "@/features/editor/components/sidebar";
 import { Toolbar } from "@/features/editor/components/toolbar";
-import { ShapeSidebar } from "@/features/editor/components/shape-sidebar";
 import { FillColorSidebar } from "@/features/editor/components/fill-color-sidebar";
 import { StrokeColorSidebar } from "@/features/editor/components/stroke-color-sidebar";
 import { StrokeWidthSidebar } from "@/features/editor/components/stroke-width-sidebar";
@@ -24,26 +23,15 @@ import { ImageSidebar } from "@/features/editor/components/image-sidebar";
 import { FilterSidebar } from "@/features/editor/components/filter-sidebar";
 import { DrawSidebar } from "@/features/editor/components/draw-sidebar";
 import { AiSidebar } from "@/features/editor/components/ai-sidebar";
-import { TemplateSidebar } from "@/features/editor/components/template-sidebar";
-import { RemoveBgSidebar } from "@/features/editor/components/remove-bg-sidebar";
 import { SettingsSidebar } from "@/features/editor/components/settings-sidebar";
+import { useLayersStore } from "../hooks/use-layer-store";
 
 interface EditorProps {
   initialData: ResponseType["data"];
 }
 
 export const Editor = ({ initialData }: EditorProps) => {
-  const { mutate } = useUpdateProject(initialData.id);
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const debouncedSave = useCallback(
-    debounce((values: { json: string; height: number; width: number }) => {
-      mutate(values);
-    }, 500),
-    [mutate],
-  );
-
-  const [activeTool, setActiveTool] = useState<ActiveTool>("select");
+   const [activeTool, setActiveTool] = useState<ActiveTool>("select");
 
   const onClearSelection = useCallback(() => {
     if (selectionDependentTools.includes(activeTool)) {
@@ -51,41 +39,44 @@ export const Editor = ({ initialData }: EditorProps) => {
     }
   }, [activeTool]);
 
-  const { init, editor } = useEditor({
+  const { mutate } = useUpdateProject(initialData.id);
+
+   // === Editor setup ===
+  const { init, editor, setContainer } = useEditor({
     defaultState: initialData.json,
     defaultWidth: initialData.width,
     defaultHeight: initialData.height,
     clearSelectionCallback: onClearSelection,
-    saveCallback: debouncedSave,
+    saveCallback: (values) => {
+  },
   });
 
+  // === Active tool handling ===
   const onChangeActiveTool = useCallback(
     (tool: ActiveTool) => {
-      if (tool === "draw") {
-        editor?.enableDrawingMode();
-      }
+      if (tool === "draw") editor?.enableDrawingMode?.();
+      if (activeTool === "draw") editor?.disableDrawingMode?.();
 
-      if (activeTool === "draw") {
-        editor?.disableDrawingMode();
-      }
-
-      if (tool === activeTool) {
-        return setActiveTool("select");
-      }
-
+      if (tool === activeTool) return setActiveTool("select");
       setActiveTool(tool);
     },
-    [activeTool, editor],
+    [activeTool, editor]
   );
 
-  const canvasRef = useRef(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  // === Refs ===
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
+  // === Initialize canvas ===
   useEffect(() => {
-    const canvas = new fabric.Canvas(canvasRef.current, {
+    console.log('[Editor] canvas init effect running');
+
+    const canvas = new fabric.Canvas(canvasRef.current!, {
       controlsAboveOverlay: true,
       preserveObjectStacking: true,
     });
+
+    useLayersStore.getState().setCanvas(canvas);
 
     init({
       initialCanvas: canvas,
@@ -93,103 +84,53 @@ export const Editor = ({ initialData }: EditorProps) => {
     });
 
     return () => {
+      console.log('[Editor] disposing canvas');
       canvas.dispose();
     };
   }, [init]);
 
+  const editorRef = useRef(editor);
+
+useEffect(() => {
+  if (editor) {
+    editorRef.current = editor;
+  }
+}, [editor]);
+
+  // === Layout ===
   return (
     <div className="h-full flex flex-col">
       <Navbar
         id={initialData.id}
-        editor={editor}
+        editor={editorRef.current}
         activeTool={activeTool}
         onChangeActiveTool={onChangeActiveTool}
       />
       <div className="absolute h-[calc(100%-68px)] w-full top-[68px] flex">
-        <Sidebar
-          activeTool={activeTool}
-          onChangeActiveTool={onChangeActiveTool}
-        />
-        <ShapeSidebar
-          editor={editor}
-          activeTool={activeTool}
-          onChangeActiveTool={onChangeActiveTool}
-        />
-        <FillColorSidebar
-          editor={editor}
-          activeTool={activeTool}
-          onChangeActiveTool={onChangeActiveTool}
-        />
-        <StrokeColorSidebar
-          editor={editor}
-          activeTool={activeTool}
-          onChangeActiveTool={onChangeActiveTool}
-        />
-        <StrokeWidthSidebar
-          editor={editor}
-          activeTool={activeTool}
-          onChangeActiveTool={onChangeActiveTool}
-        />
-        <OpacitySidebar
-          editor={editor}
-          activeTool={activeTool}
-          onChangeActiveTool={onChangeActiveTool}
-        />
-        <TextSidebar
-          editor={editor}
-          activeTool={activeTool}
-          onChangeActiveTool={onChangeActiveTool}
-        />
-        <FontSidebar
-          editor={editor}
-          activeTool={activeTool}
-          onChangeActiveTool={onChangeActiveTool}
-        />
-        <ImageSidebar
-          editor={editor}
-          activeTool={activeTool}
-          onChangeActiveTool={onChangeActiveTool}
-        />
-        <TemplateSidebar
-          editor={editor}
-          activeTool={activeTool}
-          onChangeActiveTool={onChangeActiveTool}
-        />
-        <FilterSidebar
-          editor={editor}
-          activeTool={activeTool}
-          onChangeActiveTool={onChangeActiveTool}
-        />
-        <AiSidebar
-          editor={editor}
-          activeTool={activeTool}
-          onChangeActiveTool={onChangeActiveTool}
-        />
-        <RemoveBgSidebar
-          editor={editor}
-          activeTool={activeTool}
-          onChangeActiveTool={onChangeActiveTool}
-        />
-        <DrawSidebar
-          editor={editor}
-          activeTool={activeTool}
-          onChangeActiveTool={onChangeActiveTool}
-        />
-        <SettingsSidebar
-          editor={editor}
-          activeTool={activeTool}
-          onChangeActiveTool={onChangeActiveTool}
-        />
+        <Sidebar activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
+        <StrokeColorSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
+        <StrokeWidthSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
+        <OpacitySidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
+        <TextSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
+        <FontSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
+        <ImageSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
+        <FilterSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
+        <AiSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
+        <DrawSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
+        <SettingsSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
+
         <main className="bg-muted flex-1 overflow-auto relative flex flex-col">
           <Toolbar
             editor={editor}
             activeTool={activeTool}
             onChangeActiveTool={onChangeActiveTool}
-            key={JSON.stringify(editor?.canvas.getActiveObject())}
           />
           <div
             className="flex-1 h-[calc(100%-124px)] bg-muted"
-            ref={containerRef}
+            ref={(node) => {
+              containerRef.current = node;
+              setContainer(node);
+            }}
           >
             <canvas ref={canvasRef} />
           </div>

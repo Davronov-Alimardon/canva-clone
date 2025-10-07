@@ -1,8 +1,9 @@
+import { useEffect } from "react";
 import {
   ActiveTool,
   Editor,
   STROKE_COLOR,
-  STROKE_WIDTH,
+  STROKE_WIDTH
 } from "@/features/editor/types";
 import { ToolSidebarClose } from "@/features/editor/components/tool-sidebar-close";
 import { ToolSidebarHeader } from "@/features/editor/components/tool-sidebar-header";
@@ -26,6 +27,43 @@ export const DrawSidebar = ({
 }: DrawSidebarProps) => {
   const colorValue = editor?.getActiveStrokeColor() || STROKE_COLOR;
   const widthValue = editor?.getActiveStrokeWidth() || STROKE_WIDTH;
+
+ useEffect(() => {
+  if (!editor?.canvas) return;
+
+  const canvas = editor.canvas;
+  const canvasWrapper = canvas.getElement();
+  if (!canvasWrapper) return;
+
+  
+  if (activeTool === "draw") {
+    // Enable drawing mode
+    editor.enableDrawingMode();
+    
+    // Force disable selection and set cursor
+    canvas.selection = false;
+    canvas.defaultCursor = "crosshair";
+    canvasWrapper.style.cursor = "crosshair";
+    
+    // Disable all selection-related behaviors
+    canvas.forEachObject((obj) => {
+      obj.selectable = false;
+    });
+    
+  } else {
+    // Disable drawing mode and restore normal behavior
+    editor.disableDrawingMode();
+    canvas.selection = true;
+    canvas.defaultCursor = "default";
+    canvasWrapper.style.cursor = "default";
+    
+    // Re-enable object selection
+    canvas.forEachObject((obj) => {
+      obj.selectable = true;
+    });
+  }
+
+}, [activeTool, editor]);
 
   const onClose = () => {
     editor?.disableDrawingMode();

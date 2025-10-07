@@ -1,0 +1,11 @@
+{
+    "configurations": [
+    {
+        "name": "Launch Edge against localhost",
+        "request": "launch",
+        "type": "msedge",
+        "url": "http://localhost:3000",
+        "webRoot": "${workspaceFolder}"
+    }
+    ]
+}

@@ -117,48 +117,6 @@ export const FONT_FAMILY = "Arial";
 export const FONT_SIZE = 32;
 export const FONT_WEIGHT = 400;
 
-export const CIRCLE_OPTIONS = {
-  radius: 225,
-  left: 100,
-  top: 100,
-  fill: FILL_COLOR,
-  stroke: STROKE_COLOR,
-  strokeWidth: STROKE_WIDTH,
-};
-
-export const RECTANGLE_OPTIONS = {
-  left: 100,
-  top: 100,
-  fill: FILL_COLOR,
-  stroke: STROKE_COLOR,
-  strokeWidth: STROKE_WIDTH,
-  width: 400,
-  height: 400,
-  angle: 0,
-};
-
-export const DIAMOND_OPTIONS = {
-  left: 100,
-  top: 100,
-  fill: FILL_COLOR,
-  stroke: STROKE_COLOR,
-  strokeWidth: STROKE_WIDTH,
-  width: 600,
-  height: 600,
-  angle: 0,
-};
-
-export const TRIANGLE_OPTIONS = {
-  left: 100,
-  top: 100,
-  fill: FILL_COLOR,
-  stroke: STROKE_COLOR,
-  strokeWidth: STROKE_WIDTH,
-  width: 400,
-  height: 400,
-  angle: 0,
-};
-
 export const TEXT_OPTIONS = {
   type: "textbox",
   left: 100,
@@ -186,7 +144,6 @@ export type BuildEditorProps = {
   save: (skip?: boolean) => void;
   canUndo: () => boolean;
   canRedo: () => boolean;
-  autoZoom: () => void;
   copy: () => void;
   paste: () => void;
   canvas: fabric.Canvas;
@@ -204,61 +161,119 @@ export type BuildEditorProps = {
 };
 
 export interface Editor {
+  // === File Actions ===
   savePng: () => void;
   saveJpg: () => void;
   saveSvg: () => void;
-  saveJson: () => void;
+  saveJson: () => Promise<void>;
   loadJson: (json: string) => void;
+
+  // === State ===
   onUndo: () => void;
   onRedo: () => void;
   canUndo: () => boolean;
   canRedo: () => boolean;
-  autoZoom: () => void;
+  getWorkspace: () => fabric.Object | undefined;
   zoomIn: () => void;
   zoomOut: () => void;
-  getWorkspace: () => fabric.Object | undefined;
-  changeBackground: (value: string) => void;
-  changeSize: (value: { width: number; height: number }) => void;
+
+  // === Drawing Mode ===
   enableDrawingMode: () => void;
   disableDrawingMode: () => void;
-  onCopy: () => void;
-  onPaste: () => void;
-  changeImageFilter: (value: string) => void;
-  addImage: (value: string) => void;
-  delete: () => void;
-  changeFontSize: (value: number) => void;
-  getActiveFontSize: () => number;
-  changeTextAlign: (value: string) => void;
-  getActiveTextAlign: () => string;
-  changeFontUnderline: (value: boolean) => void;
-  getActiveFontUnderline: () => boolean;
-  changeFontLinethrough: (value: boolean) => void;
-  getActiveFontLinethrough: () => boolean;
-  changeFontStyle: (value: string) => void;
-  getActiveFontStyle: () => string;
-  changeFontWeight: (value: number) => void;
-  getActiveFontWeight: () => number;
-  getActiveFontFamily: () => string;
-  changeFontFamily: (value: string) => void;
-  addText: (value: string, options?: ITextboxOptions) => void;
-  getActiveOpacity: () => number;
-  changeOpacity: (value: number) => void;
-  bringForward: () => void;
-  sendBackwards: () => void;
-  changeStrokeWidth: (value: number) => void;
-  changeFillColor: (value: string) => void;
   changeStrokeColor: (value: string) => void;
-  changeStrokeDashArray: (value: number[]) => void;
-  addCircle: () => void;
-  addSoftRectangle: () => void;
-  addRectangle: () => void;
-  addTriangle: () => void;
-  addInverseTriangle: () => void;
-  addDiamond: () => void;
-  canvas: fabric.Canvas;
-  getActiveFillColor: () => string;
   getActiveStrokeColor: () => string;
+  changeStrokeWidth: (value: number) => void;
   getActiveStrokeWidth: () => number;
-  getActiveStrokeDashArray: () => number[];
+  getActiveStrokeDashArray(): number[];
+  changeStrokeDashArray(dashArray: number[]): void;
+  
+
+  // === Editing ===
+  changeFillColor: (value: string) => void;
+  addText: (value: string, options?: Partial<ITextboxOptions>) => void;
+  getActiveOpacity(): number;
+  changeOpacity(opacity: number): void;
+  changeBackground(color: string): void;
+  changeSize(size: { width: number; height: number }): void;
+  getActiveFontFamily(): string;
+  changeFontFamily(fontFamily: string): void;
+  getActiveFillColor(): string;
+  changeImageFilter(filter: string): void;
+  getActiveFontWeight(): number;
+  getActiveFontStyle(): string;
+  getActiveFontLinethrough(): boolean;
+  getActiveFontUnderline(): boolean;
+  getActiveTextAlign(): string;
+  getActiveFontSize(): number;
+
+  changeFontSize(size: number): void;
+  changeTextAlign(align: string): void;
+  changeFontWeight(weight: number): void;
+  changeFontStyle(style: string): void;
+  changeFontLinethrough(linethrough: boolean): void;
+  changeFontUnderline(underline: boolean): void;
+
+  bringForward(): void;
+  sendBackwards(): void;
+
+  onCopy(): void;
+  onPaste(): void;
+  
+  delete(): void;
+  
+
+  // === Core Context ===
   selectedObjects: fabric.Object[];
+  canvas: fabric.Canvas;
 }
+
+interface HistoryEntry {
+  past: Array<Layer["objects"]>;
+  future: Array<Layer["objects"]>;
+}
+
+
+export enum LayerType {
+  Global = 'GLOBAL',
+  Sectional = 'SECTIONAL',
+}
+
+
+export interface Layer {
+  id: string;
+  name: string;
+  type: LayerType;
+  imageDataUrl: string | null;
+  referenceImageUrls: string[]; // Holds reference images for this specific layer
+  maskDataUrl: string | null;
+  isVisible: boolean;
+  prompt: string;
+  objects: any[]; // fabric objects
+}
+
+export interface LayersState {
+  layers: Layer[];
+  activeLayerId: string;
+  history: Record<string, HistoryEntry>;
+  canvas: fabric.Canvas | null;
+
+  setCanvas: (canvas: fabric.Canvas) => void;
+  addLayer: () => void;
+  deleteLayer: (id: string) => void;
+  selectLayer: (id: string) => void;
+  reorderLayers: (reordered: Layer[]) => void;
+  toggleVisibility: (id: string) => void;
+  updateLayer: (id: string, updates: Partial<Layer>, addToHistory?: boolean) => void;
+  undo: () => void;
+  redo: () => void;
+
+  bringForward: () => void;
+  sendBackward: () => void;
+  bringToFront: () => void;
+  sendToBack: () => void;
+  selectedObjects: fabric.Object[];
+setSelectedObjects: (objects: fabric.Object[]) => void;
+addImageLayer: (file: File, dataUrl: string) => string;
+addMultipleImageLayers: (files: File[]) => Promise<void>;
+}
+

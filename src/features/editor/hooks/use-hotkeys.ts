@@ -17,65 +17,71 @@ export const useHotkeys = ({
   save,
   copy,
   paste,
-}: UseHotkeysProps) => {
-  useEvent("keydown", (event) => {
+}: UseHotkeysProps): void => {
+  useEvent("keydown", (event: KeyboardEvent) => {
     const isCtrlKey = event.ctrlKey || event.metaKey;
-    const isBackspace = event.key === "Backspace";
-    const isInput = ["INPUT", "TEXTAREA"].includes(
-      (event.target as HTMLElement).tagName,
-    );
+    const isInput =
+      event.target instanceof HTMLInputElement ||
+      event.target instanceof HTMLTextAreaElement ||
+      (event.target instanceof HTMLElement && event.target.isContentEditable);
 
     if (isInput) return;
 
-    // delete key
-    if (event.keyCode === 46) {
-      canvas?.getActiveObjects().forEach((Object) => canvas?.remove(Object));
+    // Delete or Backspace → remove selected objects
+    if (event.key === "Delete" || event.key === "Backspace") {
+      const selectedObjects = canvas?.getActiveObjects() ?? [];
+      selectedObjects.forEach((obj) => canvas?.remove(obj));
       canvas?.discardActiveObject();
       canvas?.renderAll();
+      return;
     }
 
-    if (isBackspace) {
-      canvas?.remove(...canvas.getActiveObjects());
-      canvas?.discardActiveObject();
-    }
-
+    // Undo
     if (isCtrlKey && event.key === "z") {
       event.preventDefault();
       undo();
+      return;
     }
 
+    // Redo
     if (isCtrlKey && event.key === "y") {
       event.preventDefault();
       redo();
+      return;
     }
 
+    // Copy
     if (isCtrlKey && event.key === "c") {
       event.preventDefault();
       copy();
+      return;
     }
 
+    // Paste
     if (isCtrlKey && event.key === "v") {
       event.preventDefault();
       paste();
+      return;
     }
 
+    // Save
     if (isCtrlKey && event.key === "s") {
       event.preventDefault();
       save(true);
+      return;
     }
 
+    // Select All
     if (isCtrlKey && event.key === "a") {
       event.preventDefault();
-      canvas?.discardActiveObject();
-
-      const allObjects = canvas
-        ?.getObjects()
-        .filter((object) => object.selectable);
-
-      canvas?.setActiveObject(
-        new fabric.ActiveSelection(allObjects, { canvas }),
+      const allObjects = (canvas?.getObjects() ?? []).filter(
+        (object) => object.selectable
       );
-      canvas?.renderAll();
+      if (canvas && allObjects.length > 0) {
+        const selection = new fabric.ActiveSelection(allObjects, { canvas });
+        canvas.setActiveObject(selection);
+        canvas.renderAll();
+      }
     }
   });
 };
