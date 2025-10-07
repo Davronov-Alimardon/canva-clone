@@ -20,28 +20,29 @@ export function useEditor({
 }: EditorHookProps) {
 
   // --- Zustand store ---
-  const {
+ const {
     canvas,
     selectedObjects,
     setSelectedObjects,
     undo,
     redo,
+    activeGlobalLayerId,
+    getActiveGlobalLayer,
+    updateLayer,
   } = useLayersStore();
 
 
   // --- Local states ---
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
-   const [activeTool, setActiveTool] = useState<ActiveTool>("select");
+  const [activeTool, setActiveTool] = useState<ActiveTool>("select");
 
-   const [fillColor, setFillColor] = useState("rgba(0,0,0,1)");
+  const [fillColor, setFillColor] = useState("rgba(0,0,0,1)");
   const [strokeColor, setStrokeColor] = useState("rgba(0,0,0,1)");
   const [strokeWidth, setStrokeWidth] = useState(2);
   const [strokeDashArray, setStrokeDashArray] = useState<number[]>([]);
   const [fontFamily, setFontFamily] = useState("Arial");
 
     // --- Initialize workspace ---
-  // Create stable refs and a stable setter so `useEditorInit` returns a
-  // stable `init` function (avoids re-creating the canvas on every render).
   const canvasHistoryRef = useRef<string[]>([]);
   const historyIndexRef = useRef<number>(0);
   const setHistoryIndex = useCallback((n: number) => {
@@ -59,48 +60,38 @@ export function useEditor({
   );
 
   const handleSave = useCallback(() => {
-    const activeId = useLayersStore.getState().activeLayerId;
-    if (!canvas || !activeId) return;
+    const activeGlobalLayer = getActiveGlobalLayer();
+    if (!canvas || !activeGlobalLayer) return;
+    
+    // Get all objects except the workspace clip
     const currentObjects = canvas.getObjects().filter((obj) => obj.name !== "clip");
-    useLayersStore.getState().updateLayer(activeId, { objects: currentObjects });
+    
+    // Update the active global layer with current canvas state
+    updateLayer(activeGlobalLayer.id, { objects: currentObjects });
+    
+    // Call the project save callback
     saveCallback?.({
       json: JSON.stringify(canvas.toJSON()),
       height: canvas.getHeight(),
       width: canvas.getWidth(),
     });
-  }, [canvas, saveCallback]);
-
-
-  const functionsRef = useRef({
-    undo: () => useLayersStore.getState().undo(),
-    redo: () => useLayersStore.getState().redo(),
-    save: handleSave,
-  });
+  }, [canvas, getActiveGlobalLayer, updateLayer, saveCallback]);
 
   // --- Clipboard & utility hooks ---
-  const { copy, paste } = useClipboard({
-    canvas,
-    activeLayerId: useLayersStore.getState().activeLayerId,
-    onObjectsAdded: (objects) => {
-      const activeId = useLayersStore.getState().activeLayerId;
-      useLayersStore.getState().updateLayer(activeId, { objects });
-    },
-  });
+const { copy, paste, canCopy, canPaste } = useClipboard({
+  canvas,
+  activeLayerId: activeGlobalLayerId,
+  onObjectsAdded: (objects) => {
+    const activeGlobalLayer = getActiveGlobalLayer();
+    if (activeGlobalLayer) {
+      updateLayer(activeGlobalLayer.id, { objects });
+    }
+  },
+});
 
   // --- Canvas event handlers ---
   useCanvasEvents({
-    save: () => {
-      const activeId = useLayersStore.getState().activeLayerId;
-      if (!canvas || !activeId) return;
-
-      const currentObjects = canvas.getObjects().filter((obj) => obj.name !== "clip");
-      useLayersStore.getState().updateLayer(activeId, { objects: currentObjects });
-      saveCallback?.({
-        json: JSON.stringify(canvas.toJSON()),
-        height: canvas.getHeight(),
-        width: canvas.getWidth(),
-      });
-    },
+    save: handleSave,
     canvas: canvas!,
     setSelectedObjects,
     clearSelectionCallback,
@@ -129,6 +120,8 @@ export function useEditor({
       canRedo: () => true, 
       copy,
       paste,
+      canCopy,
+      canPaste,
       canvas: canvas!,
       fillColor, 
       strokeColor, 
@@ -142,7 +135,7 @@ export function useEditor({
       setStrokeDashArray,
       setFontFamily,
     });
-  }, [canvas, copy, paste, undo, redo, handleSave, fillColor, strokeColor, strokeWidth, fontFamily, strokeDashArray, selectedObjects]);
+  }, [canvas, copy, paste, canCopy, canPaste, undo, redo, handleSave, fillColor, strokeColor, strokeWidth, fontFamily, strokeDashArray, selectedObjects]);
 
   return {
     init,
@@ -150,5 +143,7 @@ export function useEditor({
     setContainer,
     activeTool,
     setActiveTool,
+    activeGlobalLayerId,
+    getActiveGlobalLayer,
   };
 }

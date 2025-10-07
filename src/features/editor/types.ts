@@ -146,6 +146,8 @@ export type BuildEditorProps = {
   canRedo: () => boolean;
   copy: () => void;
   paste: () => void;
+  canCopy: () => boolean, 
+  canPaste: () => boolean,
   canvas: fabric.Canvas;
   fillColor: string;
   strokeColor: string;
@@ -232,6 +234,23 @@ interface HistoryEntry {
   future: Array<Layer["objects"]>;
 }
 
+export interface FabricObjectWithLayer extends fabric.Object {
+  layerId?: string;
+}
+
+export type LayerAwareFabricObject = fabric.Object & {
+  layerId?: string;
+};
+
+// for the layer's object data (serializable)
+export type LayerObjectData = ReturnType<fabric.Object['toObject']>;
+
+export type LayerObjects = LayerObjectData[];
+
+export type FabricWorkspace = fabric.Rect & {
+  name: "clip";
+};
+
 
 export enum LayerType {
   Global = 'GLOBAL',
@@ -243,25 +262,38 @@ export interface Layer {
   id: string;
   name: string;
   type: LayerType;
+  parentId?: string; 
   imageDataUrl: string | null;
   referenceImageUrls: string[]; // Holds reference images for this specific layer
   maskDataUrl: string | null;
   isVisible: boolean;
   prompt: string;
-  objects: any[]; // fabric objects
+  objects: LayerObjects; // fabric objects
+  canvasState?: string;
+  children?: Layer[];
+  isActive?: boolean;
 }
 
 export interface LayersState {
   layers: Layer[];
-  activeLayerId: string;
+  activeGlobalLayerId: string;
   history: Record<string, HistoryEntry>;
   canvas: fabric.Canvas | null;
 
+  // Hierarchical methods
+  addGlobalLayer: (name?: string) => void;
+  addSectionalLayer: (parentGlobalId: string, name?: string) => void;
+  getLayerTree: () => Layer[]; // Returns hierarchical structure
+  getActiveGlobalLayer: () => Layer | null;
+  setActiveGlobalLayer: (id: string) => void;
+
+  // Updated existing methods
+  deleteLayer: (id: string) => void; // With cascade logic
+  selectLayer: (id: string) => void; // Respect hierarchy
+  reorderLayers: (reordered: Layer[]) => void; // Tree-aware
+
   setCanvas: (canvas: fabric.Canvas) => void;
   addLayer: () => void;
-  deleteLayer: (id: string) => void;
-  selectLayer: (id: string) => void;
-  reorderLayers: (reordered: Layer[]) => void;
   toggleVisibility: (id: string) => void;
   updateLayer: (id: string, updates: Partial<Layer>, addToHistory?: boolean) => void;
   undo: () => void;
@@ -272,8 +304,39 @@ export interface LayersState {
   bringToFront: () => void;
   sendToBack: () => void;
   selectedObjects: fabric.Object[];
-setSelectedObjects: (objects: fabric.Object[]) => void;
-addImageLayer: (file: File, dataUrl: string) => string;
-addMultipleImageLayers: (files: File[]) => Promise<void>;
+  setSelectedObjects: (objects: fabric.Object[]) => void;
+  addMultipleImageLayers: (files: File[]) => Promise<void>;
+  tagObjectWithActiveLayer: (obj: fabric.Object) => void;
 }
+
+// Add to your types.ts
+export interface SerializedFabricObject {
+  type: string;
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  fill: string;
+  stroke: string | null;
+  strokeWidth: number;
+  opacity: number;
+  visible: boolean;
+  angle: number;
+  scaleX: number;
+  scaleY: number;
+  layerId?: string;
+  name?: string;
+  // Text specific 
+  text?: string;
+  fontSize?: number;
+  fontFamily?: string;
+  // Image specific 
+  src?: string;
+  // Rect specific 
+  rx?: number;
+  ry?: number;
+  // Circle specific 
+  radius?: number;
+}
+
 

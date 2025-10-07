@@ -1,5 +1,7 @@
 import { fabric } from "fabric";
 import { useEvent } from "react-use";
+import { BASE_CANVAS_ID, useLayersStore } from "../hooks/use-layer-store";
+import { LayerAwareFabricObject } from "../types";
 
 interface UseHotkeysProps {
   canvas: fabric.Canvas | null;
@@ -27,15 +29,42 @@ export const useHotkeys = ({
 
     if (isInput) return;
 
-    // Delete or Backspace → remove selected objects
-    if (event.key === "Delete" || event.key === "Backspace") {
-      const selectedObjects = canvas?.getActiveObjects() ?? [];
-      selectedObjects.forEach((obj) => canvas?.remove(obj));
-      canvas?.discardActiveObject();
-      canvas?.renderAll();
-      return;
+   if (event.key === "Delete" || event.key === "Backspace") {
+  const selectedObjects = canvas?.getActiveObjects() ?? [];
+  
+  if (selectedObjects.length > 0) {
+    event.preventDefault();
+    
+    // Remove from canvas
+    selectedObjects.forEach((obj) => canvas?.remove(obj));
+    canvas?.discardActiveObject();
+    canvas?.renderAll();
+    
+    // ✅ Update the active layer AND delete it if empty
+    const activeGlobalLayer = useLayersStore.getState().getActiveGlobalLayer();
+    if (activeGlobalLayer && canvas) {
+      const currentObjects = canvas.getObjects().filter(obj => 
+        obj.name !== "clip" && 
+        (obj as LayerAwareFabricObject).layerId === activeGlobalLayer.id
+      );
+      
+      if (currentObjects.length === 0 && activeGlobalLayer.id !== BASE_CANVAS_ID) {
+        // ✅ ACTUALLY DELETE the empty layer (except base canvas)
+        console.log('Deleting empty layer:', activeGlobalLayer.name);
+        useLayersStore.getState().deleteLayer(activeGlobalLayer.id);
+      } else {
+        // ✅ Update the layer with current objects
+        const serializedObjects = currentObjects.map(obj => obj.toObject());
+        useLayersStore.getState().updateLayer(activeGlobalLayer.id, { 
+          objects: serializedObjects 
+        });
+      }
     }
-
+    
+    save();
+  }
+  return;
+}
     // Undo
     if (isCtrlKey && event.key === "z") {
       event.preventDefault();

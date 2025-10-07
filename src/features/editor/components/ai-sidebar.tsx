@@ -16,22 +16,26 @@ interface AiSidebarProps {
   onChangeActiveTool: (tool: ActiveTool) => void;
 }
 
-
 export const AiSidebar = ({
-  // Wait for AI integration
   editor: _editor,
   activeTool,
   onChangeActiveTool,
 }: AiSidebarProps) => {
-  const { layers, activeLayerId, updateLayer } = useLayersStore();
-  const activeLayer = layers.find((l) => l.id === activeLayerId);
-  const globalLayer = layers.find((l) => l.type === LayerType.Global);
+  const { layers, activeGlobalLayerId, getActiveGlobalLayer, updateLayer } = useLayersStore();
+  
+  // Get the active global layer and its sectional children
+  const activeGlobalLayer = getActiveGlobalLayer();
+  const sectionalLayers = layers.filter(l => 
+    l.type === LayerType.Sectional && l.parentId === activeGlobalLayerId
+  );
+  
+  // Find the first active sectional layer (you might want to track this separately)
+  const activeSectionalLayer = sectionalLayers.length > 0 ? sectionalLayers[0] : null;
 
   const [tab, setTab] = useState<"global" | "sectional">("global");
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const currentLayer =
-    tab === "global" ? globalLayer : activeLayer?.type === LayerType.Sectional ? activeLayer : null;
+  const currentLayer = tab === "global" ? activeGlobalLayer : activeSectionalLayer;
 
   const onClose = () => onChangeActiveTool("select");
 
@@ -53,32 +57,36 @@ export const AiSidebar = ({
     }, 1200);
   };
 
-  if (!currentLayer) {
+  if (!activeGlobalLayer) {
     return null;
   }
 
-  const hasMaskPaths = currentLayer.objects?.some(
-    (o) => o.type?.toLowerCase() === "path"
+  // Check for mask paths in the current layer's objects
+  const hasMaskPaths = currentLayer?.objects?.some(
+    (o: any) => o.type?.toLowerCase() === "path"
   );
+  
   const hasReferenceImages =
-    currentLayer.referenceImageUrls && currentLayer.referenceImageUrls.length > 0;
-  const hasImageData = !!currentLayer.imageDataUrl;
+    currentLayer?.referenceImageUrls && currentLayer.referenceImageUrls.length > 0;
+    
+  const hasImageData = !!currentLayer?.imageDataUrl;
 
   let buttonText = "Generate";
-  if (currentLayer.type === LayerType.Global) {
+  if (currentLayer?.type === LayerType.Global) {
     if (hasMaskPaths && hasImageData) buttonText = "Inpaint Global Layer";
     else if (!hasImageData && hasReferenceImages) buttonText = "Generate Variation";
     else buttonText = "Generate Image";
-  } else {
+  } else if (currentLayer?.type === LayerType.Sectional) {
     if (hasMaskPaths) buttonText = "Inpaint Section";
     else buttonText = "Draw Mask to Inpaint";
   }
 
   const isButtonDisabled =
-    !currentLayer.prompt ||
-    (currentLayer.type === LayerType.Sectional && !hasMaskPaths);
+    !currentLayer?.prompt ||
+    (currentLayer?.type === LayerType.Sectional && !hasMaskPaths);
+    
   const placeholderText =
-    currentLayer.type === LayerType.Global
+    currentLayer?.type === LayerType.Global
       ? "e.g., A futuristic city skyline at dusk..."
       : "e.g., Add a neon sign on the building...";
 
@@ -101,15 +109,17 @@ export const AiSidebar = ({
       >
         <TabsList className="grid grid-cols-2 m-4">
           <TabsTrigger value="global">Global</TabsTrigger>
-          <TabsTrigger value="sectional">Sectional</TabsTrigger>
+           {activeSectionalLayer && (
+    <TabsTrigger value="sectional">Sectional</TabsTrigger>
+  )}
         </TabsList>
 
         <ScrollArea className="flex-1 p-4 space-y-4">
           <TabsContent value="global">
-            {globalLayer ? (
+            {activeGlobalLayer ? (
               <div className="flex flex-col space-y-4">
                 <Textarea
-                  value={globalLayer.prompt}
+                  value={activeGlobalLayer.prompt || ""}
                   onChange={(e) => onPromptChange(e.target.value)}
                   placeholder="e.g., A serene beach sunrise..."
                   rows={5}
@@ -130,10 +140,10 @@ export const AiSidebar = ({
           </TabsContent>
 
           <TabsContent value="sectional">
-            {activeLayer && activeLayer.type === LayerType.Sectional ? (
+            {activeSectionalLayer ? (
               <div className="flex flex-col space-y-4">
                 <Textarea
-                  value={activeLayer.prompt}
+                  value={activeSectionalLayer.prompt || ""}
                   onChange={(e) => onPromptChange(e.target.value)}
                   placeholder={placeholderText}
                   rows={5}
@@ -148,7 +158,7 @@ export const AiSidebar = ({
               </div>
             ) : (
               <p className="text-sm text-gray-500">
-                Select a sectional layer to edit its prompt.
+                No sectional layers available. Add a sectional layer to the active global layer first.
               </p>
             )}
           </TabsContent>

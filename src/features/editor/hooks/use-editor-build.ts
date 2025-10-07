@@ -6,8 +6,8 @@ import {
   transformText,
 } from "@/features/editor/utils";
 import { findWorkspace, centerObject } from "./use-editor-utils";
-import { BuildEditorProps, Editor, JSON_KEYS, FONT_SIZE } from "@/features/editor/types";
-import { useLayersStore } from "./use-layer-store";
+import { BuildEditorProps, Editor, JSON_KEYS, FONT_SIZE, SerializedFabricObject, LayerAwareFabricObject } from "@/features/editor/types";
+import { BASE_CANVAS_ID, useLayersStore } from "./use-layer-store";
 
 
 export function buildEditor({
@@ -58,24 +58,100 @@ export function buildEditor({
   };
 
   const saveJson = async () => {
-    const data = canvas.toJSON(JSON_KEYS);
-    await transformText(data.objects);
-    const fileString = `data:text/json;charset=utf-8,${encodeURIComponent(
-      JSON.stringify(data, null, "\t"),
-    )}`;
-    downloadFile(fileString, "json");
+  const { layers, activeGlobalLayerId } = useLayersStore.getState();
+  
+  // Get current canvas state
+  const canvasData = canvas.toJSON(JSON_KEYS);
+  
+  // Create enhanced save data with layer information
+  const saveData = {
+    timestamp: new Date().toISOString(),
+    layers: layers.map(layer => ({
+      id: layer.id,
+      name: layer.name,
+      type: layer.type,
+      parentId: layer.parentId,
+      imageDataUrl: layer.imageDataUrl,
+      referenceImageUrls: layer.referenceImageUrls,
+      maskDataUrl: layer.maskDataUrl,
+      isVisible: layer.isVisible,
+      isActive: layer.isActive,
+      prompt: layer.prompt,
+      objects: layer.objects, // Include the layer's stored objects
+      children: layer.children
+    })),
+    activeGlobalLayerId,
+    canvasData: canvasData, // Keep original canvas data for compatibility
   };
 
+  await transformText(canvasData.objects);
+  
+  const fileString = `data:text/json;charset=utf-8,${encodeURIComponent(
+    JSON.stringify(saveData, null, "\t"),
+  )}`;
+  downloadFile(fileString, "json");
+};
+
   const loadJson = (json: string) => {
-    try {
-      const parsed = JSON.parse(json);
+  try {
+
+    if (!canvas || !canvas.getContext()) {
+      console.warn('Canvas not ready for loading');
+      return;
+    }
+
+    const parsed = JSON.parse(json);
+    
+    // Check if it has layers (layer-aware format)
+    if (parsed.layers) {
+      // Load layer-aware project
+      const { layers, activeGlobalLayerId, canvasData } = parsed;
+      
+      // clear the current state
+      useLayersStore.getState().setCanvas(canvas);
+      
+      // Load the canvas data first
+      canvas.loadFromJSON(canvasData, () => {
+        // Restore the layer structure
+        useLayersStore.setState({
+          layers: layers,
+          activeGlobalLayerId: activeGlobalLayerId,
+        });
+        
+        // Re-tag all objects with their layer IDs using proper typing
+        const allObjects = canvas.getObjects();
+        allObjects.forEach(obj => {
+          if (obj.name !== "clip") {
+            // Find which layer this object belongs to by matching object properties
+            const objectData = canvasData.objects?.find((o: SerializedFabricObject) => {
+              // Match objects by multiple properties since Fabric doesn't guarantee stable IDs
+              return o.left === obj.left && 
+                     o.top === obj.top && 
+                     o.type === obj.type;
+            });
+            
+            if (objectData && objectData.layerId) {
+              // Use the store method to properly tag the object
+              useLayersStore.getState().tagObjectWithActiveLayer(obj);
+            }
+          }
+        });
+        
+        // Activate the saved active layer
+        useLayersStore.getState().setActiveGlobalLayer(activeGlobalLayerId);
+        
+        canvas.renderAll();
+      });
+    } else {
+      // Legacy format - load as before
       canvas.loadFromJSON(parsed, () => {
         canvas.renderAll();
       });
-    } catch (err) {
-      console.error("Failed to load JSON:", err);
     }
-  };
+  } catch (err) {
+    console.error("Failed to load JSON:", err);
+  }
+};
 
   const addToCanvas = (object: fabric.Object) => {
     centerObject(canvas, object);
@@ -123,15 +199,26 @@ export function buildEditor({
       canvas.requestRenderAll();
     },
 
-     // === Drawing Mode ===
-    enableDrawingMode: () => {
-      canvas.isDrawingMode = true;
-      canvas.freeDrawingBrush.width = 5;
-      canvas.freeDrawingBrush.color = fillColor;
-    },
-    disableDrawingMode: () => {
-     canvas.isDrawingMode = false;
-    },
+    // === Drawing Mode ===
+enableDrawingMode: () => {
+  canvas.isDrawingMode = true;
+  canvas.freeDrawingBrush.width = strokeWidth;
+  canvas.freeDrawingBrush.color = strokeColor;
+  
+  // Add event listener to tag drawn objects
+  canvas.on('path:created', (e: fabric.IEvent) => {
+    const path = e.target;
+    if (path) {
+      useLayersStore.getState().tagObjectWithActiveLayer(path);
+    }
+  });
+},
+
+disableDrawingMode: () => {
+  canvas.isDrawingMode = false;
+  // Remove the event listener to prevent memory leaks
+  canvas.off('path:created');
+},
 
     // === Editing Actions ===
     changeFillColor: (value: string) => {
@@ -144,13 +231,17 @@ export function buildEditor({
     },
 
     addText: (value: string, options?: Partial<fabric.ITextboxOptions>) => {
-      const text = new fabric.Textbox(value, {
-        fill: fillColor,
-        ...options,
-      });
-      addToCanvas(text);
-      save();
-    },
+  const text = new fabric.Textbox(value, {
+    fill: fillColor,
+    ...options,
+  });
+  
+  // Use the store method to tag the object
+  useLayersStore.getState().tagObjectWithActiveLayer(text);
+  
+  addToCanvas(text);
+  save();
+},
 
      // === Font Controls ===
     getActiveFontFamily: (): string => {
@@ -306,15 +397,36 @@ export function buildEditor({
     },
 
     // === Delete Method ===
-    delete: (): void => {
-      const activeObjects = canvas.getActiveObjects();
-      activeObjects.forEach((obj) => {
-        canvas.remove(obj);
+    // In use-editor-build.ts, update the delete method to match:
+// In use-editor-build.ts
+delete: (): void => {
+  const activeObjects = canvas.getActiveObjects();
+  activeObjects.forEach((obj) => {
+    canvas.remove(obj);
+  });
+  canvas.discardActiveObject();
+  canvas.renderAll();
+  
+  // ✅ Same logic as above
+  const activeGlobalLayer = useLayersStore.getState().getActiveGlobalLayer();
+  if (activeGlobalLayer) {
+    const currentObjects = canvas.getObjects().filter(obj => 
+      obj.name !== "clip" && 
+      (obj as LayerAwareFabricObject).layerId === activeGlobalLayer.id
+    );
+    
+    if (currentObjects.length === 0 && activeGlobalLayer.id !== BASE_CANVAS_ID) {
+      useLayersStore.getState().deleteLayer(activeGlobalLayer.id);
+    } else {
+      const serializedObjects = currentObjects.map(obj => obj.toObject());
+      useLayersStore.getState().updateLayer(activeGlobalLayer.id, { 
+        objects: serializedObjects 
       });
-      canvas.discardActiveObject();
-      canvas.renderAll();
-      save();
-    },
+    }
+  }
+  
+  save();
+},
 
     // === Stroke / Brush Controls ===
     changeStrokeColor: (value: string) => {

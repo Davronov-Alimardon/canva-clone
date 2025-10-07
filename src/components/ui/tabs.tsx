@@ -14,13 +14,19 @@ interface TabsProps {
 }
 
 export function Tabs({ value, onValueChange, className, children }: TabsProps) {
-  // Inject shared props into all descendants automatically
+  // Only inject props into TabsList, not all children
   const injectedChildren = React.Children.map(children, (child) => {
     if (!React.isValidElement(child)) return child;
-    return React.cloneElement(child as React.ReactElement<any>, {
-      activeValue: value,
-      onValueChange,
-    });
+    
+    // Only inject props into TabsList components
+    if (child.type === TabsList) {
+      return React.cloneElement(child as React.ReactElement<any>, {
+        activeValue: value,
+        onValueChange,
+      });
+    }
+    
+    return child;
   });
 
   return <div className={cn("flex flex-col", className)}>{injectedChildren}</div>;
@@ -42,12 +48,18 @@ export function TabsList({
   activeValue,
   onValueChange,
 }: TabsListProps) {
+  // Only inject props into TabsTrigger components
   const injectedChildren = React.Children.map(children, (child) => {
     if (!React.isValidElement(child)) return child;
-    return React.cloneElement(child, {
-      activeValue,
-      onValueChange,
-    });
+    
+    if (child.type === TabsTrigger) {
+      return React.cloneElement(child, {
+        activeValue,
+        onValueChange,
+      });
+    }
+    
+    return child;
   });
 
   return (

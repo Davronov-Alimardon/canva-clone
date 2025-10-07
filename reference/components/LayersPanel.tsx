@@ -2,6 +2,7 @@
 import React, { useRef, useState } from 'react';
 import { Layer, LayerType } from '../types';
 import { EyeIcon, EyeOffIcon, TrashIcon, PlusIcon, UploadIcon, GripVerticalIcon, BlendIcon, FlattenIcon } from './icons';
+import { cn } from '@/lib/utils';
 
 interface LayersPanelProps {
   layers: Layer[];
@@ -15,6 +16,7 @@ interface LayersPanelProps {
   onBlendLayer: (id: string) => void;
   onFlattenAndEnhanceRequest: () => void;
   canFlatten: boolean;
+  className?: string;
 }
 
 const LayersPanel: React.FC<LayersPanelProps> = ({
@@ -29,6 +31,7 @@ const LayersPanel: React.FC<LayersPanelProps> = ({
   onBlendLayer,
   onFlattenAndEnhanceRequest,
   canFlatten,
+  className
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [draggedId, setDraggedId] = useState<string | null>(null);

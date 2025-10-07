@@ -8,13 +8,6 @@ export function useEditorInit(
   initialWidth: React.MutableRefObject<number>,
   initialHeight: React.MutableRefObject<number>,
 ) {
-  // Debug: show when the hook is (re)creating the init callback
-  // Note: this will log on every render where the hook is re-evaluated
-  console.log("[useEditorInit] creating init callback", {
-    initialWidth: initialWidth.current,
-    initialHeight: initialHeight.current,
-    canvasHistoryLength: canvasHistory.current?.length ?? 0,
-  });
 
   return useCallback(({
     initialCanvas,
@@ -23,6 +16,11 @@ export function useEditorInit(
     initialCanvas: fabric.Canvas;
     initialContainer: HTMLDivElement;
   }) => {
+     if (!initialCanvas || !initialCanvas.getContext()) {
+      console.warn('Canvas not ready for initialization');
+      return;
+    }
+
     fabric.Object.prototype.set({
       cornerColor: "#FFF",
       cornerStyle: "circle",
@@ -33,9 +31,15 @@ export function useEditorInit(
       cornerStrokeColor: "#3b82f6",
     });
 
+    const containerWidth = initialContainer.offsetWidth;
+    const containerHeight = initialContainer.offsetHeight;
+    
+    const targetWidth = containerWidth > 0 ? containerWidth : initialWidth.current;
+    const targetHeight = containerHeight > 0 ? containerHeight : initialHeight.current;
+
     const workspace = new fabric.Rect({
-      width: initialWidth.current,
-      height: initialHeight.current,
+      width: targetWidth,
+      height: targetHeight,
       name: "clip",
       fill: "white",
       selectable: false,
@@ -46,17 +50,14 @@ export function useEditorInit(
       }),
     });
 
-  // Prefer the configured initial width/height (project defaults). Fall back to container size
-  const targetWidth = initialWidth.current ?? initialContainer.offsetWidth;
-  const targetHeight = initialHeight.current ?? initialContainer.offsetHeight;
-
   initialCanvas.setWidth(targetWidth);
   initialCanvas.setHeight(targetHeight);
-    initialCanvas.add(workspace);
-    initialCanvas.centerObject(workspace);
-    initialCanvas.clipPath = workspace;
 
-    const snapshot = JSON.stringify(initialCanvas.toJSON(JSON_KEYS));
+  initialCanvas.add(workspace);
+  initialCanvas.centerObject(workspace);
+  initialCanvas.clipPath = workspace;
+
+  const snapshot = JSON.stringify(initialCanvas.toJSON(JSON_KEYS));
     canvasHistory.current = [snapshot];
     setHistoryIndex(0);
   }, [canvasHistory, setHistoryIndex, initialWidth, initialHeight])

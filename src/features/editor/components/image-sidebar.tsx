@@ -6,7 +6,6 @@ import { ToolSidebarHeader } from "@/features/editor/components/tool-sidebar-hea
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { fabric } from "fabric";
 
 /**
  * Multi-upload Image Sidebar — each uploaded image auto-creates a new layer.
@@ -23,50 +22,35 @@ export const ImageSidebar = ({
   onChangeActiveTool,
 }: ImageSidebarProps) => {
   const [isUploading, setIsUploading] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
-  const { addImageLayer, updateLayer, canvas } = useLayersStore();
+  const { addMultipleImageLayers } = useLayersStore();
 
-  const onClose = () => onChangeActiveTool("select");
+  const onClose = () => {
+    setSelectedFiles([]); // Clear selection when closing
+    onChangeActiveTool("select");
+  };
 
   const handleFiles = async (files: FileList | null) => {
     if (!files) return;
+    
+    const fileArray = Array.from(files);
+    setSelectedFiles(fileArray);
     setIsUploading(true);
 
-    const fileArray = Array.from(files);
+    try {
+      await addMultipleImageLayers(fileArray);
+    } catch (error) {
+      console.error("Error uploading images:", error);
+    } finally {
+      setIsUploading(false);
+      setSelectedFiles([]); // Clear selection after upload
 
-    // process each image in upload order
-    for (const file of fileArray) {
-      await new Promise<void>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const dataUrl = event.target?.result as string;
-          if (!dataUrl) return resolve();
-
-          // 1️⃣ Create new layer (store only)
-          const newLayerId = addImageLayer(file, dataUrl);
-
-          // 2️⃣ Add image to Fabric canvas
-          if (canvas) {
-            fabric.Image.fromURL(dataUrl, (img) => {
-              img.set({ left: 100, top: 100, selectable: true });
-              canvas.add(img);
-              canvas.setActiveObject(img);
-              canvas.renderAll();
-
-              // 3️⃣ Sync Fabric state with layer
-              const objects = canvas.getObjects().filter((obj) => obj.name !== "clip");
-              updateLayer(newLayerId, { objects });
-              resolve();
-            });
-          } else {
-            resolve();
-          }
-        };
-        reader.readAsDataURL(file);
-      });
+       const fileInput = document.querySelector<HTMLInputElement>('input[type="file"]');
+  if (fileInput) {
+    fileInput.value = '';
+  }
     }
-
-    setIsUploading(false);
   };
 
   return (
@@ -95,6 +79,11 @@ export const ImageSidebar = ({
             <p className="text-sm text-gray-600">
               {isUploading ? "Uploading..." : "Click or drag multiple images here"}
             </p>
+            {selectedFiles.length > 0 && (
+              <p className="text-xs text-gray-500 mt-2">
+                {selectedFiles.length} image{selectedFiles.length > 1 ? 's' : ''} selected
+              </p>
+            )}
           </label>
 
           <Button
