@@ -6,6 +6,7 @@ import {
   EyeOff,
   Trash2,
   Plus,
+  Minus,
   GripVertical,
   ChevronDown,
   ChevronRight,
@@ -34,10 +35,15 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({ className }) => {
     reorderLayers,
   } = useLayersStore();
 
+  const [isMinimized, setIsMinimized] = useState(false);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [expandedLayers, setExpandedLayers] = useState<Set<string>>(
     new Set([activeGlobalLayerId]) 
   );
+
+   const toggleMinimize = () => {
+    setIsMinimized(!isMinimized);
+  };
 
   
   // Build tree structure from flat array
@@ -301,6 +307,23 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({ className }) => {
     );
   };
 
+   if (isMinimized) {
+    return (
+      <div className={cn("bg-white p-2 rounded-lg text-white h-full flex flex-col", className)}>
+        <div className="flex justify-between items-center">
+          <h2 className="text-sm font-normal text-black">Layers</h2>
+          <button
+            onClick={toggleMinimize}
+            title="Expand layers panel"
+            className="p-1 text-gray-400 hover:text-black transition"
+          >
+            <ChevronDown className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("bg-white p-2 rounded-lg text-white h-full flex flex-col", className)}>
       {/* Header */}
@@ -308,11 +331,11 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({ className }) => {
         <h2 className="text-sm font-normal text-black">Layers</h2>
         <div className="flex items-center space-x-2">
           <button
-            onClick={handleAddGlobalLayer}
-            title="Add new global layer"
+            onClick={toggleMinimize}
+            title="Minimize layers panel"
             className="p-1 text-gray-400 hover:text-white transition"
           >
-            <Plus className="w-5 h-5" />
+            <Minus className="w-5 h-5" />
           </button>
         </div>
       </div>

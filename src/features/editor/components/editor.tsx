@@ -1,7 +1,6 @@
 "use client";
 
 import { fabric } from "fabric";
-import debounce from "lodash.debounce";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ResponseType } from "@/features/projects/api/use-get-project";
