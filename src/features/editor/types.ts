@@ -283,14 +283,14 @@ export interface LayersState {
   // Hierarchical methods
   addGlobalLayer: (name?: string) => void;
   addSectionalLayer: (parentGlobalId: string, name?: string) => void;
-  getLayerTree: () => Layer[]; // Returns hierarchical structure
+  getLayerTree: () => Layer[]; 
   getActiveGlobalLayer: () => Layer | null;
   setActiveGlobalLayer: (id: string) => void;
 
   // Updated existing methods
   deleteLayer: (id: string) => void; // With cascade logic
-  selectLayer: (id: string) => void; // Respect hierarchy
-  reorderLayers: (reordered: Layer[]) => void; // Tree-aware
+  selectLayer: (id: string) => void; 
+  reorderLayers: (reordered: Layer[]) => void; 
 
   setCanvas: (canvas: fabric.Canvas) => void;
   addLayer: () => void;
@@ -307,6 +307,8 @@ export interface LayersState {
   setSelectedObjects: (objects: fabric.Object[]) => void;
   addMultipleImageLayers: (files: File[]) => Promise<void>;
   tagObjectWithActiveLayer: (obj: fabric.Object) => void;
+
+  resetCanvasState: () => void;
 }
 
 // Add to your types.ts

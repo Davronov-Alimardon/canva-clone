@@ -40,7 +40,7 @@ export const useHotkeys = ({
     canvas?.discardActiveObject();
     canvas?.renderAll();
     
-    // ✅ Update the active layer AND delete it if empty
+    // Update the active layer AND delete it if empty
     const activeGlobalLayer = useLayersStore.getState().getActiveGlobalLayer();
     if (activeGlobalLayer && canvas) {
       const currentObjects = canvas.getObjects().filter(obj => 
@@ -49,11 +49,9 @@ export const useHotkeys = ({
       );
       
       if (currentObjects.length === 0 && activeGlobalLayer.id !== BASE_CANVAS_ID) {
-        // ✅ ACTUALLY DELETE the empty layer (except base canvas)
-        console.log('Deleting empty layer:', activeGlobalLayer.name);
         useLayersStore.getState().deleteLayer(activeGlobalLayer.id);
       } else {
-        // ✅ Update the layer with current objects
+        // Update the layer with current objects
         const serializedObjects = currentObjects.map(obj => obj.toObject());
         useLayersStore.getState().updateLayer(activeGlobalLayer.id, { 
           objects: serializedObjects 

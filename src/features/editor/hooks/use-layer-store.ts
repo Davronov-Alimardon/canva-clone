@@ -181,6 +181,12 @@ export const useLayersStore = create<LayersState>((set, get) => ({
     
     objectsToRemove.forEach(obj => canvas.remove(obj));
     canvas.discardActiveObject();
+
+    canvas.isDrawingMode = false;
+    canvas.selection = true; 
+    canvas.defaultCursor = 'default';
+    canvas.hoverCursor = 'move'; 
+
     canvas.renderAll();
   }
 
@@ -221,6 +227,18 @@ export const useLayersStore = create<LayersState>((set, get) => ({
       };
     });
   },
+
+  // Add this to your useLayersStore
+resetCanvasState: () => {
+  const { canvas } = get();
+  if (canvas) {
+    canvas.isDrawingMode = false;
+    canvas.selection = true;
+    canvas.defaultCursor = 'default';
+    canvas.discardActiveObject();
+    canvas.renderAll();
+  }
+},
 
   selectLayer: (id) => {
     const layer = get().layers.find(l => l.id === id);

@@ -7,7 +7,7 @@ import {
 } from "@/features/editor/utils";
 import { findWorkspace, centerObject } from "./use-editor-utils";
 import { BuildEditorProps, Editor, JSON_KEYS, FONT_SIZE, SerializedFabricObject, LayerAwareFabricObject } from "@/features/editor/types";
-import { BASE_CANVAS_ID, useLayersStore } from "./use-layer-store";
+import { BASE_CANVAS_ID, useLayersStore  } from "./use-layer-store";
 
 
 export function buildEditor({
@@ -404,7 +404,14 @@ delete: (): void => {
   activeObjects.forEach((obj) => {
     canvas.remove(obj);
   });
+
+  useLayersStore.getState().resetCanvasState();
   canvas.discardActiveObject();
+
+  canvas.isDrawingMode = false;
+  canvas.selection = true;
+  canvas.defaultCursor = 'default';
+
   canvas.renderAll();
   
   // ✅ Same logic as above
