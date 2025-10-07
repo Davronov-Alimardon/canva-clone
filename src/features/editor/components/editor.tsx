@@ -32,6 +32,7 @@ interface EditorProps {
 
 export const Editor = ({ initialData }: EditorProps) => {
    const [activeTool, setActiveTool] = useState<ActiveTool>("select");
+   const [aiSidebarTab, setAiSidebarTab] = useState<"global" | "sectional">("global");
    const [isCanvasInitialized, setIsCanvasInitialized] = useState(false);
 
   const onClearSelection = useCallback(() => {
@@ -130,6 +131,11 @@ useEffect(() => {
   }
 }, [editor]);
 
+const handleOpenAiSectional = () => {
+  setAiSidebarTab("sectional");
+  setActiveTool("ai");
+};
+
   // === Layout ===
   return (
     <div className="h-full flex flex-col">
@@ -148,7 +154,7 @@ useEffect(() => {
         <FontSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
         <ImageSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
         <FilterSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
-        <AiSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
+        <AiSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} defaultTab={aiSidebarTab} />
         <DrawSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
         <SettingsSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
 
@@ -166,7 +172,7 @@ useEffect(() => {
             }}
           >
             <div className="absolute right-0 top-0 z-50 p-2">
-            <LayersPanel className="" />
+            <LayersPanel onOpenAiSectional={handleOpenAiSectional} />
             </div>
             <canvas ref={canvasRef}/>
           </div>

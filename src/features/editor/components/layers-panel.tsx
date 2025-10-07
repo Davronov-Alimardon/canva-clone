@@ -16,13 +16,14 @@ import { cn } from "@/lib/utils";
 
 interface LayersPanelProps {
   className?: string;
+  onOpenAiSectional?: () => void;
 }
 
 interface LayerTreeNode extends Layer {
   children: Layer[];
 }
 
-export const LayersPanel: React.FC<LayersPanelProps> = ({ className }) => {
+export const LayersPanel: React.FC<LayersPanelProps> = ({ className, onOpenAiSectional }) => {
   const {
     layers,
     activeGlobalLayerId,
@@ -114,6 +115,10 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({ className }) => {
     if (!expandedLayers.has(globalLayerId)) {
       handleToggleExpand(globalLayerId);
     }
+
+    if (onOpenAiSectional) {
+      onOpenAiSectional();
+    }
   };
 
   // 🔹 Drag and drop
@@ -150,14 +155,6 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({ className }) => {
     const isExpanded = expandedLayers.has(layer.id);
     const hasChildren = isGlobal && 
       (layerTree.find(g => g.id === layer.id)?.children?.length ?? 0) > 0;
-
-    // Check if layer is empty (no objects and no image data)
-    const isEmptyLayer = layer.objects.length === 0 && !layer.imageDataUrl;
-    
-    // Don't render empty layers (except base canvas)
-    if (isEmptyLayer && !isBaseCanvas) {
-      return null;
-    }
 
   return (
      <div key={layer.id} className="space-y-1">
