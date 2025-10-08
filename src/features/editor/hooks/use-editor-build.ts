@@ -6,7 +6,7 @@ import {
   transformText,
 } from "@/features/editor/utils";
 import { findWorkspace, centerObject } from "./use-editor-utils";
-import { BuildEditorProps, Editor, JSON_KEYS, FONT_SIZE, SerializedFabricObject, LayerAwareFabricObject } from "@/features/editor/types";
+import { BuildEditorProps, Editor, JSON_KEYS, FONT_SIZE, SerializedFabricObject, FabricObjectWithLayer } from "@/features/editor/types";
 import { BASE_CANVAS_ID, useLayersStore  } from "./use-layer-store";
 
 
@@ -200,24 +200,144 @@ export function buildEditor({
     },
 
     // === Drawing Mode ===
+// In use-editor-build.ts - update the drawing mode to remove AI-specific logic
 enableDrawingMode: () => {
-  canvas.isDrawingMode = true;
-  canvas.freeDrawingBrush.width = strokeWidth;
-  canvas.freeDrawingBrush.color = strokeColor;
+  console.log('🔧 Switching to drawing mode');
+
+  const storeState = useLayersStore.getState();
+  const activeLayer = storeState.activeSectionalLayerId 
+    ? storeState.getActiveSectionalLayer() 
+    : storeState.getActiveGlobalLayer();
   
-  // Add event listener to tag drawn objects
-  canvas.on('path:created', (e: fabric.IEvent) => {
-    const path = e.target;
-    if (path) {
-      useLayersStore.getState().tagObjectWithActiveLayer(path);
+  console.log('🎯 Drawing on layer:', activeLayer?.id, activeLayer?.name);
+  
+  // COMPLETELY disable Fabric's drawing system
+  canvas.isDrawingMode = false;
+  
+  // Clear any Fabric free drawing brush
+  if (canvas.freeDrawingBrush) {
+    canvas.freeDrawingBrush.width = 0;
+    canvas.freeDrawingBrush.color = "transparent";
+  }
+  
+  canvas.defaultCursor = 'crosshair';
+  
+  let isDrawing = false;
+  let points: { x: number; y: number }[] = [];
+  
+  canvas.off('mouse:down');
+  canvas.off('mouse:move');
+  canvas.off('mouse:up');
+  
+  canvas.on('mouse:down', (e: fabric.IEvent) => {
+    if (e.pointer) {
+      isDrawing = true;
+      points = [{ x: e.pointer.x, y: e.pointer.y }];
+      console.log('🎨 Drawing STARTED at:', e.pointer.x, e.pointer.y);
     }
   });
+  
+  canvas.on('mouse:move', (e: fabric.IEvent) => {
+    if (isDrawing && e.pointer) {
+      points.push({ x: e.pointer.x, y: e.pointer.y });
+      
+      // Create temporary path for visual feedback
+      const pathString = points.map((point, index) => 
+        `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`
+      ).join(' ');
+      
+      // Remove previous temporary path if it exists
+      const existingPaths = canvas.getObjects().filter(obj => obj.name === 'tempDrawingPath');
+      existingPaths.forEach(path => canvas.remove(path));
+      
+      const tempPath = new fabric.Path(pathString, {
+        stroke: strokeColor, // Use current stroke color instead of hardcoded red
+        strokeWidth: strokeWidth, // Use current stroke width
+        fill: "",
+        strokeLineCap: 'round',
+        strokeLineJoin: 'round',
+        name: 'tempDrawingPath' 
+      });
+      
+      canvas.add(tempPath);
+      canvas.renderAll();
+    }
+  });
+  
+  canvas.on('mouse:up', () => {
+    if (isDrawing && points.length > 1) {
+      isDrawing = false;
+      
+      // Create final path
+      const pathString = points.map((point, index) => 
+        `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`
+      ).join(' ');
+      
+      const finalPath = new fabric.Path(pathString, {
+        stroke: strokeColor, // Use current stroke color
+        strokeWidth: strokeWidth, // Use current stroke width
+        fill: "",
+        strokeLineCap: 'round',
+        strokeLineJoin: 'round'
+      });
+      
+      // Remove temporary paths
+      const tempPaths = canvas.getObjects().filter(obj => obj.name === 'tempDrawingPath');
+      tempPaths.forEach(path => canvas.remove(path));
+      
+      // Add final path
+      canvas.add(finalPath);
+      useLayersStore.getState().tagObjectWithActiveLayer(finalPath);
+      
+      console.log('🎨 Drawing FINISHED - points:', points.length);
+      console.log('✅ Final path created and tagged');
+      
+      // Save to layer (keep this for regular drawing functionality)
+      const storeState = useLayersStore.getState();
+      const activeLayer = storeState.activeSectionalLayerId 
+        ? storeState.getActiveSectionalLayer() 
+        : storeState.getActiveGlobalLayer();
+      
+      if (activeLayer) {
+        const currentObjects = activeLayer.objects || [];
+        const pathData = finalPath.toObject(['layerId']);
+        const newObjects = [...currentObjects, pathData];
+        storeState.updateLayer(activeLayer.id, { objects: newObjects }, true);
+        console.log('💾 Path saved to layer:', activeLayer.id);
+      }
+      
+      points = [];
+      canvas.renderAll();
+    }
+  });
+  
+  console.log('✅ Drawing mode ready');
 },
 
 disableDrawingMode: () => {
+  console.log('🔧 Disabling manual drawing mode');
+  
   canvas.isDrawingMode = false;
-  // Remove the event listener to prevent memory leaks
+  
+  // Reset Fabric brush if needed
+  if (canvas.freeDrawingBrush) {
+    canvas.freeDrawingBrush.width = 1; // Restore normal width
+  }
+  
+  canvas.defaultCursor = 'default';
+  
+  // Remove custom event listeners
+  canvas.off('mouse:down');
+  canvas.off('mouse:move');
+  canvas.off('mouse:up');
   canvas.off('path:created');
+  
+  // Clean up temporary paths
+  const tempPaths = canvas.getObjects().filter(obj => obj.name === 'tempDrawingPath');
+  tempPaths.forEach(path => canvas.remove(path));
+  
+  canvas.renderAll();
+  console.log('✅ Manual drawing disabled');
 },
 
     // === Editing Actions ===
@@ -419,7 +539,7 @@ delete: (): void => {
   if (activeGlobalLayer) {
     const currentObjects = canvas.getObjects().filter(obj => 
       obj.name !== "clip" && 
-      (obj as LayerAwareFabricObject).layerId === activeGlobalLayer.id
+      (obj as FabricObjectWithLayer).layerId === activeGlobalLayer.id
     );
     
     if (currentObjects.length === 0 && activeGlobalLayer.id !== BASE_CANVAS_ID) {

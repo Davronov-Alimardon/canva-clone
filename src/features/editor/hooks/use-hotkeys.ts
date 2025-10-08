@@ -1,7 +1,7 @@
 import { fabric } from "fabric";
 import { useEvent } from "react-use";
 import { BASE_CANVAS_ID, useLayersStore } from "../hooks/use-layer-store";
-import { LayerAwareFabricObject } from "../types";
+import { FabricObjectWithLayer } from "../types";
 
 interface UseHotkeysProps {
   canvas: fabric.Canvas | null;
@@ -45,7 +45,7 @@ export const useHotkeys = ({
     if (activeGlobalLayer && canvas) {
       const currentObjects = canvas.getObjects().filter(obj => 
         obj.name !== "clip" && 
-        (obj as LayerAwareFabricObject).layerId === activeGlobalLayer.id
+        (obj as FabricObjectWithLayer).layerId === activeGlobalLayer.id
       );
       
       if (currentObjects.length === 0 && activeGlobalLayer.id !== BASE_CANVAS_ID) {

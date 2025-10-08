@@ -1,6 +1,6 @@
 import { fabric } from "fabric";
 import { useEffect } from "react";
-import { ActiveTool, LayerAwareFabricObject } from "../types";
+import { ActiveTool, FabricObjectWithLayer } from "../types";
 import { useLayersStore } from "../hooks/use-layer-store";
 
 interface UseCanvasEventsProps {
@@ -11,9 +11,9 @@ interface UseCanvasEventsProps {
   activeTool?: ActiveTool;
 }
 
-interface SelectionEvent extends fabric.IEvent<Event> {
-  selected?: fabric.Object[];
-}
+const isSelectionEvent = (opt: fabric.IEvent): opt is fabric.IEvent & { selected?: fabric.Object[] } => {
+  return 'selected' in opt;
+};
 
 export const useCanvasEvents = ({
   save,
@@ -23,7 +23,7 @@ export const useCanvasEvents = ({
   activeTool
 }: UseCanvasEventsProps): void => {
   useEffect(() => {
-    if (!canvas) return;
+    if (!canvas) return
 
     // === PAN/ZOOM HANDLERS ===
     let isPanning = false;
@@ -33,8 +33,8 @@ export const useCanvasEvents = ({
     const handleMouseDown = (opt: fabric.IEvent): void => {
       const evt = opt.e as MouseEvent;
       
-      // Enable panning when Ctrl key is held
-      if (evt.ctrlKey) {
+      // Enable panning when Ctrl key is held or when in pan tool
+      if (evt.ctrlKey || activeTool === "pan") {
         isPanning = true;
         canvas.selection = false;
         canvas.defaultCursor = 'grabbing';
@@ -42,6 +42,8 @@ export const useCanvasEvents = ({
         lastPosY = evt.clientY;
         evt.preventDefault(); 
       }
+      
+      // REMOVED: Brush-specific logic that was interfering
     };
 
     const handleMouseMove = (opt: fabric.IEvent): void => {
@@ -61,8 +63,14 @@ export const useCanvasEvents = ({
     const handleMouseUp = (): void => {
       if (isPanning) {
         isPanning = false;
-        canvas.selection = true;
-        canvas.defaultCursor = 'default';
+        // Restore appropriate cursor based on current tool
+        if (activeTool === "pan") {
+          canvas.defaultCursor = 'grab';
+        } else if (activeTool === "brush") {
+          canvas.defaultCursor = 'crosshair';
+        } else {
+          canvas.defaultCursor = 'default';
+        }
       }
     };
 
@@ -94,7 +102,7 @@ export const useCanvasEvents = ({
         const zoomFactor = 0.01;
         
         canvas.getObjects().forEach(obj => {
-          const layerAwareObj = obj as LayerAwareFabricObject;
+          const layerAwareObj = obj as FabricObjectWithLayer;
           const isActiveLayer = layerAwareObj.layerId === activeGlobalLayer.id && obj.name !== "clip";
           const isWorkspace = obj.name === "clip";
           
@@ -166,7 +174,14 @@ export const useCanvasEvents = ({
 
     const handleKeyUp = (e: KeyboardEvent): void => {
       if (!e.ctrlKey && !isPanning) {
-        canvas.defaultCursor = 'default';
+        // Restore appropriate cursor based on current tool
+        if (activeTool === "pan") {
+          canvas.defaultCursor = 'grab';
+        } else if (activeTool === "brush") {
+          canvas.defaultCursor = 'crosshair';
+        } else {
+          canvas.defaultCursor = 'default';
+        }
       }
     };
 
@@ -182,20 +197,22 @@ export const useCanvasEvents = ({
       }
     };
 
-    const handleSelectionChange = (e: SelectionEvent): void => {
-      if (activeTool === "draw") return;
+    const handleSelectionChange = (opt: fabric.IEvent): void => {
+      // Disable selection during drawing OR masking
+      if (!activeTool || ["draw", "brush", "eraser"].includes(activeTool)) return;
       
       if (!canvas?.getContext() || !canvas.getElement()) {
         return;
       }
       
-      if (Array.isArray(e.selected)) {
-        setSelectedObjects(e.selected);
+      if (isSelectionEvent(opt) && Array.isArray(opt.selected)) {
+        setSelectedObjects(opt.selected);
       }
     };
 
     const handleSelectionCleared = (): void => {
-      if (activeTool === "draw") return;
+      // Disable selection clearing during masking
+      if (!activeTool || ["draw", "brush", "eraser"].includes(activeTool)) return;
       
       if (!canvas?.getContext() || !canvas.getElement()) {
         return;
@@ -205,28 +222,21 @@ export const useCanvasEvents = ({
       clearSelectionCallback?.();
     };
 
-    // Only bind events if canvas is fully ready
-    if (canvas.getContext() && canvas.getElement()) {
-      // Mouse events
-      canvas.on("mouse:down", handleMouseDown);
-      canvas.on("mouse:move", handleMouseMove);
-      canvas.on("mouse:up", handleMouseUp);
-      canvas.on("mouse:wheel", handleMouseWheel);
-
-      // Key listeners for Ctrl detection
-      document.addEventListener('keydown', handleKeyDown);
-      document.addEventListener('keyup', handleKeyUp);
-
-      // Canvas object events
-      canvas.on("object:added", handleSave);
-      canvas.on("object:removed", handleSave);
-      canvas.on("object:modified", handleSave);
-      
-      // Selection events
-      canvas.on("selection:created", handleSelectionChange);
-      canvas.on("selection:updated", handleSelectionChange);
-      canvas.on("selection:cleared", handleSelectionCleared);
-    }
+    // Add event listeners
+    canvas.on("mouse:down", handleMouseDown);
+    canvas.on("mouse:move", handleMouseMove);
+    canvas.on("mouse:up", handleMouseUp);
+    canvas.on("mouse:wheel", handleMouseWheel);
+    
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
+    
+    canvas.on("object:added", handleSave);
+    canvas.on("object:removed", handleSave);
+    canvas.on("object:modified", handleSave);
+    canvas.on("selection:created", handleSelectionChange);
+    canvas.on("selection:updated", handleSelectionChange);
+    canvas.on("selection:cleared", handleSelectionCleared);
 
     return () => {
       // Clean up all event listeners

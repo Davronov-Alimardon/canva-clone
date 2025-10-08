@@ -1,3 +1,4 @@
+// editor.tsx - with AI sidebar
 "use client";
 
 import { fabric } from "fabric";
@@ -31,9 +32,8 @@ interface EditorProps {
 }
 
 export const Editor = ({ initialData }: EditorProps) => {
-   const [activeTool, setActiveTool] = useState<ActiveTool>("select");
-   const [aiSidebarTab, setAiSidebarTab] = useState<"global" | "sectional">("global");
-   const [isCanvasInitialized, setIsCanvasInitialized] = useState(false);
+  const [activeTool, setActiveTool] = useState<ActiveTool>("select");
+  const [isCanvasInitialized, setIsCanvasInitialized] = useState(false);
 
   const onClearSelection = useCallback(() => {
     if (selectionDependentTools.includes(activeTool)) {
@@ -43,98 +43,101 @@ export const Editor = ({ initialData }: EditorProps) => {
 
   const { mutate } = useUpdateProject(initialData.id);
 
-   // === Editor setup ===
+  const clearSelectionRef = useRef<() => void>(() => {
+    console.log('Clear selection placeholder');
+  });
+
+  // === Editor setup ===
   const { init, editor, setContainer } = useEditor({
     defaultState: initialData.json,
     defaultWidth: initialData.width,
     defaultHeight: initialData.height,
-    clearSelectionCallback: onClearSelection
+    clearSelectionCallback: () => clearSelectionRef.current(),
+    activeTool: activeTool, 
+    onChangeActiveTool: setActiveTool 
   });
 
-  // === Active tool handling ===
-  const onChangeActiveTool = useCallback(
-    (tool: ActiveTool) => {
-      if (tool === "draw") editor?.enableDrawingMode?.();
-      if (activeTool === "draw") editor?.disableDrawingMode?.();
+  useEffect(() => {
+    clearSelectionRef.current = () => {
+      if (selectionDependentTools.includes(activeTool)) {
+        setActiveTool("select");
+      }
+    };
+  }, [activeTool, setActiveTool]);
 
-      if (tool === activeTool) return setActiveTool("select");
-      setActiveTool(tool);
-    },
-    [activeTool, editor]
-  );
+  const onChangeActiveTool = useCallback((tool: ActiveTool) => {
+  console.log('🛠️ Tool changing to:', tool);
+  // Always set the new tool without toggle logic
+  setActiveTool(tool);
+}, [setActiveTool]);
 
   // === Refs ===
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   // === Initialize canvas ===
-useEffect(() => {
-  if (!canvasRef.current || !containerRef.current) return;
+  useEffect(() => {
+    if (!canvasRef.current || !containerRef.current) return;
 
-  let canvas: fabric.Canvas | null = null;
+    let canvas: fabric.Canvas | null = null;
 
-  try {
-    canvas = new fabric.Canvas(canvasRef.current, {
-      controlsAboveOverlay: true,
-      preserveObjectStacking: true,
-    });
-
-    useLayersStore.getState().setCanvas(canvas);
-
-    init({
-      initialCanvas: canvas,
-      initialContainer: containerRef.current,
-    });
-
-    // Delay zoom and pan to ensure canvas is fully initialized
-    setTimeout(() => {
-  if (canvas?.getContext()) {
     try {
-      canvas.setZoom(0.8);
-      
-      const centerCanvas = () => {
-        const containerWidth = containerRef.current?.offsetWidth || 0;
-        const containerHeight = containerRef.current?.offsetHeight || 0;
-        const canvasWidth = (canvas?.getWidth() ?? 0) * 0.8;
-        const canvasHeight = (canvas?.getHeight() ?? 0) * 0.8;
-        
-        const centerX = (containerWidth - canvasWidth) / 2;
-        const centerY = (containerHeight - canvasHeight) / 2;
-        
-        canvas?.absolutePan(new fabric.Point(centerX, centerY));
-      };
+      canvas = new fabric.Canvas(canvasRef.current, {
+        controlsAboveOverlay: true,
+        preserveObjectStacking: true,
+      });
 
-      centerCanvas();
-      setIsCanvasInitialized(true);
+      useLayersStore.getState().setCanvas(canvas);
+
+      init({
+        initialCanvas: canvas,
+        initialContainer: containerRef.current,
+      });
+
+      // Delay zoom and pan to ensure canvas is fully initialized
+      setTimeout(() => {
+        if (canvas?.getContext()) {
+          try {
+            canvas.setZoom(0.8);
+            
+            const centerCanvas = () => {
+              const containerWidth = containerRef.current?.offsetWidth || 0;
+              const containerHeight = containerRef.current?.offsetHeight || 0;
+              const canvasWidth = (canvas?.getWidth() ?? 0) * 0.8;
+              const canvasHeight = (canvas?.getHeight() ?? 0) * 0.8;
+              
+              const centerX = (containerWidth - canvasWidth) / 2;
+              const centerY = (containerHeight - canvasHeight) / 2;
+              
+              canvas?.absolutePan(new fabric.Point(centerX, centerY));
+            };
+
+            centerCanvas();
+            setIsCanvasInitialized(true);
+          } catch (error) {
+            console.warn('Canvas zoom/pan failed:', error);
+          }
+        }
+      }, 200);
+
     } catch (error) {
-      console.warn('Canvas zoom/pan failed:', error);
+      console.error('Failed to initialize canvas:', error);
     }
-  }
-}, 200);
 
-  } catch (error) {
-    console.error('Failed to initialize canvas:', error);
-  }
-
-  return () => {
-    if (canvas) {
-      canvas.dispose();
-    }
-  };
-}, [init]);
+    return () => {
+      if (canvas) {
+        canvas.dispose();
+      }
+    };
+  }, [init]);
 
   const editorRef = useRef(editor);
 
-useEffect(() => {
-  if (editor) {
-    editorRef.current = editor;
-  }
-}, [editor]);
-
-const handleOpenAiSectional = () => {
-  setAiSidebarTab("sectional");
-  setActiveTool("ai");
-};
+  useEffect(() => {
+    if (editor) {
+      editorRef.current = editor;
+    }
+  }, [editor]);
 
   // === Layout ===
   return (
@@ -154,10 +157,15 @@ const handleOpenAiSectional = () => {
         <FontSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
         <ImageSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
         <FilterSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
-        <AiSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} defaultTab={aiSidebarTab} />
+        <AiSidebar 
+          editor={editor} 
+          activeTool={activeTool} 
+          onChangeActiveTool={onChangeActiveTool} 
+        />
         <DrawSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
         <SettingsSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
 
+        {/* Main Canvas Area */}
         <main className="w-full bg-muted flex-1 overflow-auto relative flex flex-col">
           <Toolbar
             editor={editor}
@@ -171,8 +179,9 @@ const handleOpenAiSectional = () => {
               setContainer(node);
             }}
           >
+            {/* Layers Panel */}
             <div className="absolute right-0 top-0 z-50 p-2">
-            <LayersPanel onOpenAiSectional={handleOpenAiSectional} />
+              <LayersPanel />
             </div>
             <canvas ref={canvasRef}/>
           </div>

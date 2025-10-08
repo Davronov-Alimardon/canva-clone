@@ -1,4 +1,5 @@
-import { useState, useMemo, useCallback, useRef } from "react";
+// use-editor hook - simplified version
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useHotkeys } from "./use-hotkeys";
 import { useClipboard } from "./use-clipboard";
 import { useCanvasEvents } from "./use-canvas-events";
@@ -6,8 +7,6 @@ import { useEditorInit } from "./use-editor-init";
 import { buildEditor } from "./use-editor-build";
 import { EditorHookProps, ActiveTool } from "@/features/editor/types";
 import { useLayersStore } from "./use-layer-store";
-import { useCanvasPanZoom } from "./use-canvas-pan-zoom";
-
 
 /**
  * Main editor logic, unified with layer store (useLayersStore).
@@ -17,10 +16,12 @@ export function useEditor({
   defaultWidth,
   clearSelectionCallback,
   saveCallback,
+  activeTool: externalActiveTool, 
+  onChangeActiveTool: externalOnChangeActiveTool,
 }: EditorHookProps) {
 
   // --- Zustand store ---
- const {
+  const {
     canvas,
     selectedObjects,
     setSelectedObjects,
@@ -31,18 +32,19 @@ export function useEditor({
     updateLayer,
   } = useLayersStore();
 
-
   // --- Local states ---
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
-  const [activeTool, setActiveTool] = useState<ActiveTool>("select");
-
   const [fillColor, setFillColor] = useState("rgba(0,0,0,1)");
   const [strokeColor, setStrokeColor] = useState("rgba(0,0,0,1)");
   const [strokeWidth, setStrokeWidth] = useState(2);
   const [strokeDashArray, setStrokeDashArray] = useState<number[]>([]);
   const [fontFamily, setFontFamily] = useState("Arial");
+  
+  // Use external props only - no internal state
+  const activeTool = externalActiveTool || "select";
+  const setActiveTool = externalOnChangeActiveTool || (() => {});
 
-    // --- Initialize workspace ---
+  // --- Initialize workspace ---
   const canvasHistoryRef = useRef<string[]>([]);
   const historyIndexRef = useRef<number>(0);
   const setHistoryIndex = useCallback((n: number) => {
@@ -78,16 +80,16 @@ export function useEditor({
   }, [canvas, getActiveGlobalLayer, updateLayer, saveCallback]);
 
   // --- Clipboard & utility hooks ---
-const { copy, paste, canCopy, canPaste } = useClipboard({
-  canvas,
-  activeLayerId: activeGlobalLayerId,
-  onObjectsAdded: (objects) => {
-    const activeGlobalLayer = getActiveGlobalLayer();
-    if (activeGlobalLayer) {
-      updateLayer(activeGlobalLayer.id, { objects });
-    }
-  },
-});
+  const { copy, paste, canCopy, canPaste } = useClipboard({
+    canvas,
+    activeLayerId: activeGlobalLayerId || undefined,
+    onObjectsAdded: (objects) => {
+      const activeGlobalLayer = getActiveGlobalLayer();
+      if (activeGlobalLayer) {
+        updateLayer(activeGlobalLayer.id, { objects });
+      }
+    },
+  });
 
   // --- Canvas event handlers ---
   useCanvasEvents({
@@ -95,7 +97,7 @@ const { copy, paste, canCopy, canPaste } = useClipboard({
     canvas: canvas!,
     setSelectedObjects,
     clearSelectionCallback,
-    activeTool
+    activeTool 
   });
 
   // --- Hotkeys ---
@@ -110,7 +112,7 @@ const { copy, paste, canCopy, canPaste } = useClipboard({
 
   // --- Memoized editor API ---
   const editor = useMemo(() => {
-  if (!canvas) return undefined;
+    if (!canvas) return undefined;
 
     return buildEditor({
       save: handleSave,
@@ -141,8 +143,8 @@ const { copy, paste, canCopy, canPaste } = useClipboard({
     init,
     editor,
     setContainer,
-    activeTool,
-    setActiveTool,
+    activeTool, 
+    setActiveTool, 
     activeGlobalLayerId,
     getActiveGlobalLayer,
   };

@@ -107,7 +107,9 @@ export type ActiveTool =
   | "settings"
   | "ai"
   | "remove-bg"
-  | "templates";
+  | "brush"     
+  | "eraser"    
+  | "pan";  ;
 
 export const FILL_COLOR = "rgba(0,0,0,1)";
 export const STROKE_COLOR = "rgba(0,0,0,1)";
@@ -136,6 +138,8 @@ export interface EditorHookProps {
     height: number;
     width: number;
   }) => void;
+  activeTool?: ActiveTool;
+  onChangeActiveTool?: (tool: ActiveTool) => void;
 }
 
 export type BuildEditorProps = {
@@ -238,10 +242,6 @@ export interface FabricObjectWithLayer extends fabric.Object {
   layerId?: string;
 }
 
-export type LayerAwareFabricObject = fabric.Object & {
-  layerId?: string;
-};
-
 // for the layer's object data (serializable)
 export type LayerObjectData = ReturnType<fabric.Object['toObject']>;
 
@@ -276,17 +276,22 @@ export interface Layer {
 
 export interface LayersState {
   layers: Layer[];
-  activeGlobalLayerId: string;
+  activeGlobalLayerId: string | null;
+  activeSectionalLayerId: string | null;
   history: Record<string, HistoryEntry>;
   canvas: fabric.Canvas | null;
 
   // Hierarchical methods
   addGlobalLayer: (name?: string) => void;
-  addSectionalLayer: (parentGlobalId: string, name?: string) => void;
-  getLayerTree: () => Layer[]; 
   getActiveGlobalLayer: () => Layer | null;
   setActiveGlobalLayer: (id: string) => void;
 
+  addSectionalLayer: (parentGlobalId: string, name?: string) => string | null;
+  getActiveSectionalLayer: () => Layer | null;
+  setActiveSectionalLayer: (id: string | null) => void;
+
+  getLayerTree: () => Layer[]; 
+  
   // Updated existing methods
   deleteLayer: (id: string) => void; // With cascade logic
   selectLayer: (id: string) => void; 
