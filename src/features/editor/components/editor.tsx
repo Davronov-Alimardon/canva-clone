@@ -67,9 +67,38 @@ export const Editor = ({ initialData }: EditorProps) => {
 
   const onChangeActiveTool = useCallback((tool: ActiveTool) => {
   console.log('🛠️ Tool changing to:', tool);
-  // Always set the new tool without toggle logic
+
+   if (tool === activeTool && tool !== "select") {
+    console.log('⏭️ Tool already active, skipping');
+    return;
+  }
+
   setActiveTool(tool);
-}, [setActiveTool]);
+  
+  // If switching to brush, ensure we're not in a state that would conflict
+  if (tool === "brush") {
+    console.log('🎯 Brush tool activated - ensuring proper state');
+    
+    // Small delay to ensure state is updated before any canvas operations
+    setTimeout(() => {
+      if (editorRef.current?.canvas) {
+        console.log('🔧 Setting canvas for brush tool');
+        editorRef.current.canvas.defaultCursor = 'crosshair';
+        editorRef.current.canvas.selection = false;
+        editorRef.current.canvas.renderAll();
+
+        setTimeout(() => {
+          if (editorRef.current?.canvas) {
+            editorRef.current.canvas.defaultCursor = 'crosshair';
+            editorRef.current.canvas.renderAll();
+            console.log('✅ Crosshair cursor confirmed');
+          }
+        }, 50);
+      }
+    }, 150);
+    
+  }
+}, [activeTool,setActiveTool]);
 
   // === Refs ===
   const canvasRef = useRef<HTMLCanvasElement | null>(null);

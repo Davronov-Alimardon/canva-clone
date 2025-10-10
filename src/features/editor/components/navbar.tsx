@@ -1,13 +1,11 @@
 "use client";
 
 import { CiFileOn } from "react-icons/ci";
-import { BsCloudCheck, BsCloudSlash } from "react-icons/bs";
 import { useFilePicker } from "use-file-picker";
 import { useMutationState } from "@tanstack/react-query";
 import {
   ChevronDown,
   Download,
-  Loader,
   MousePointerClick,
   Redo2,
   Undo2,
@@ -17,6 +15,8 @@ import { UserButton } from "@/features/auth/components/user-button";
 
 import { ActiveTool, Editor } from "@/features/editor/types";
 import { Logo } from "@/features/editor/components/logo";
+import { SaveIndicator } from "@/features/editor/components/save-indicator";
+import { useLocalAutosave } from "@/features/editor/hooks/use-local-autosave";
 
 import { cn } from "@/lib/utils";
 import { Hint } from "@/components/hint";
@@ -27,6 +27,10 @@ import {
   DropdownMenuItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
 interface NavbarProps {
@@ -54,6 +58,9 @@ export const Navbar = ({
 
   const isError = currentStatus === "error";
   const isPending = currentStatus === "pending";
+
+  // Local autosave hook
+  const { status: autosaveStatus, lastSaved } = useLocalAutosave();
 
   const { openFilePicker } = useFilePicker({
     accept: ".json",
@@ -127,24 +134,7 @@ export const Navbar = ({
           </Button>
         </Hint>
         <Separator orientation="vertical" className="mx-2" />
-        {isPending && (
-          <div className="flex items-center gap-x-2">
-            <Loader className="size-4 animate-spin text-muted-foreground" />
-            <div className="text-xs text-muted-foreground">Saving...</div>
-          </div>
-        )}
-        {!isPending && isError && (
-          <div className="flex items-center gap-x-2">
-            <BsCloudSlash className="size-[20px] text-muted-foreground" />
-            <div className="text-xs text-muted-foreground">Failed to save</div>
-          </div>
-        )}
-        {!isPending && !isError && (
-          <div className="flex items-center gap-x-2">
-            <BsCloudCheck className="size-[20px] text-muted-foreground" />
-            <div className="text-xs text-muted-foreground">Saved</div>
-          </div>
-        )}
+        <SaveIndicator status={autosaveStatus} lastSaved={lastSaved} />
         <div className="ml-auto flex items-center gap-x-4">
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
@@ -154,6 +144,7 @@ export const Navbar = ({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-60">
+              {/* JSON Export - unchanged */}
               <DropdownMenuItem
                 className="flex items-center gap-x-2"
                 onClick={() => editor?.saveJson()}
@@ -166,42 +157,56 @@ export const Navbar = ({
                   </p>
                 </div>
               </DropdownMenuItem>
-              <DropdownMenuItem
-                className="flex items-center gap-x-2"
-                onClick={() => editor?.savePng()}
-              >
-                <CiFileOn className="size-8" />
-                <div>
-                  <p>PNG</p>
-                  <p className="text-xs text-muted-foreground">
-                    Best for sharing on the web
-                  </p>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="flex items-center gap-x-2"
-                onClick={() => editor?.saveJpg()}
-              >
-                <CiFileOn className="size-8" />
-                <div>
-                  <p>JPG</p>
-                  <p className="text-xs text-muted-foreground">
-                    Best for printing
-                  </p>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="flex items-center gap-x-2"
-                onClick={() => editor?.saveSvg()}
-              >
-                <CiFileOn className="size-8" />
-                <div>
-                  <p>SVG</p>
-                  <p className="text-xs text-muted-foreground">
-                    Best for editing in vector software
-                  </p>
-                </div>
-              </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
+
+              {/* Current Layer Only Export */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="flex items-center gap-x-2">
+                  <CiFileOn className="size-8" />
+                  <div>
+                    <p>Current Layer Only</p>
+                    <p className="text-xs text-muted-foreground">
+                      Export active layer content
+                    </p>
+                  </div>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem onClick={() => editor?.savePng("current-layer")}>
+                    PNG
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => editor?.saveJpg("current-layer")}>
+                    JPG
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => editor?.saveSvg("current-layer")}>
+                    SVG
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
+              {/* Flattened Image Export */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="flex items-center gap-x-2">
+                  <CiFileOn className="size-8" />
+                  <div>
+                    <p>Flattened Image</p>
+                    <p className="text-xs text-muted-foreground">
+                      Final composite without masks
+                    </p>
+                  </div>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem onClick={() => editor?.savePng("flattened")}>
+                    PNG
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => editor?.saveJpg("flattened")}>
+                    JPG
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => editor?.saveSvg("flattened")}>
+                    SVG
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
             </DropdownMenuContent>
           </DropdownMenu>
           <UserButton />

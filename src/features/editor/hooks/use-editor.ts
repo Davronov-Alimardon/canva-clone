@@ -25,8 +25,10 @@ export function useEditor({
     canvas,
     selectedObjects,
     setSelectedObjects,
-    undo,
-    redo,
+    undoOperation,
+    redoOperation,
+    canUndo,
+    canRedo,
     activeGlobalLayerId,
     getActiveGlobalLayer,
     updateLayer,
@@ -45,18 +47,10 @@ export function useEditor({
   const setActiveTool = externalOnChangeActiveTool || (() => {});
 
   // --- Initialize workspace ---
-  const canvasHistoryRef = useRef<string[]>([]);
-  const historyIndexRef = useRef<number>(0);
-  const setHistoryIndex = useCallback((n: number) => {
-    historyIndexRef.current = n;
-  }, []);
-
   const initialWidthRef = useRef<number>(defaultWidth ?? 0);
   const initialHeightRef = useRef<number>(defaultHeight ?? 0);
 
   const init = useEditorInit(
-    canvasHistoryRef,
-    setHistoryIndex,
     initialWidthRef,
     initialHeightRef,
   );
@@ -100,35 +94,25 @@ export function useEditor({
     activeTool 
   });
 
-  // --- Hotkeys ---
-  useHotkeys({
-    canvas: canvas!,
-    undo,
-    redo,
-    copy,
-    paste,
-    save: handleSave
-  });
-
   // --- Memoized editor API ---
   const editor = useMemo(() => {
     if (!canvas) return undefined;
 
     return buildEditor({
       save: handleSave,
-      undo,
-      redo,
-      canUndo: () => true, 
-      canRedo: () => true, 
+      undo: undoOperation,
+      redo: redoOperation,
+      canUndo: canUndo,
+      canRedo: canRedo,
       copy,
       paste,
       canCopy,
       canPaste,
       canvas: canvas!,
-      fillColor, 
-      strokeColor, 
-      strokeWidth, 
-      fontFamily, 
+      fillColor,
+      strokeColor,
+      strokeWidth,
+      fontFamily,
       strokeDashArray,
       selectedObjects,
       setFillColor,
@@ -137,7 +121,20 @@ export function useEditor({
       setStrokeDashArray,
       setFontFamily,
     });
-  }, [canvas, copy, paste, canCopy, canPaste, undo, redo, handleSave, fillColor, strokeColor, strokeWidth, fontFamily, strokeDashArray, selectedObjects]);
+  }, [canvas, copy, paste, canCopy, canPaste, undoOperation, redoOperation, canUndo, canRedo, handleSave, fillColor, strokeColor, strokeWidth, fontFamily, strokeDashArray, selectedObjects]);
+
+  // --- Hotkeys (after editor is defined) ---
+  useHotkeys({
+    canvas: canvas!,
+    editor,
+    undo: undoOperation,
+    redo: redoOperation,
+    copy,
+    paste,
+    save: handleSave,
+    activeTool,
+    onChangeActiveTool: externalOnChangeActiveTool || (() => {})
+  });
 
   return {
     init,

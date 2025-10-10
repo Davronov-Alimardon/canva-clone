@@ -8,6 +8,8 @@ import {
   Trash2,
   Minus,
   GripVertical,
+  Folder,
+  Brush,
 } from "lucide-react"; 
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -20,11 +22,13 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({ className }) => {
   const {
     layers,
     activeGlobalLayerId,
+    activeSectionalLayerId,
     deleteLayer,
     setActiveGlobalLayer,
     selectLayer,
     toggleVisibility,
     reorderLayers,
+    getLayerTree,
   } = useLayersStore();
 
   const [isMinimized, setIsMinimized] = useState(false);
@@ -34,27 +38,57 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({ className }) => {
     setIsMinimized(!isMinimized);
   };
 
-  // Build simplified layer list (only globals)
+  // Build hierarchical layer list with sectional layers
   const layerList = useMemo((): Layer[] => {
-    const globals = layers.filter(l => l.type === LayerType.Global);
-    
-    const baseCanvas = globals.find(l => l.id === BASE_CANVAS_ID);
-    const otherGlobals = globals.filter(l => l.id !== BASE_CANVAS_ID);
+    const layerTree = getLayerTree();
+    const flattenedLayers: Layer[] = [];
 
-    const nonEmptyGlobals = otherGlobals.filter(layer => 
-      layer.id === BASE_CANVAS_ID || 
-      layer.objects.length > 0 || 
-      layer.imageDataUrl
+    // Filter and process global layers
+    const baseCanvas = layerTree.find(l => l.id === BASE_CANVAS_ID);
+    const otherGlobals = layerTree.filter(l => l.id !== BASE_CANVAS_ID);
+
+    const nonEmptyGlobals = otherGlobals.filter(layer =>
+      layer.id === BASE_CANVAS_ID ||
+      layer.objects.length > 0 ||
+      layer.imageDataUrl ||
+      (layer.children && layer.children.length > 0)
     );
-    
-    // Reverse the order of other globals so top visual layer is at top of panel
+
+    // Reverse the order so top visual layer is at top of panel
     const reversedGlobals = [...nonEmptyGlobals].reverse();
-    
-    // Reversed globals first, then Base Canvas at bottom
-    return baseCanvas 
-      ? [...reversedGlobals, baseCanvas]
-      : reversedGlobals;
-  }, [layers]);
+
+    // Build flattened list with hierarchy
+    reversedGlobals.forEach(globalLayer => {
+      flattenedLayers.push(globalLayer);
+
+      // Add sectional layers as children
+      if (globalLayer.children && globalLayer.children.length > 0) {
+        globalLayer.children.forEach(sectionalLayer => {
+          flattenedLayers.push({
+            ...sectionalLayer,
+            isChild: true // Add flag to identify child layers
+          });
+        });
+      }
+    });
+
+    // Add Base Canvas at bottom
+    if (baseCanvas) {
+      flattenedLayers.push(baseCanvas);
+
+      // Add its sectional layers if any
+      if (baseCanvas.children && baseCanvas.children.length > 0) {
+        baseCanvas.children.forEach(sectionalLayer => {
+          flattenedLayers.push({
+            ...sectionalLayer,
+            isChild: true
+          });
+        });
+      }
+    }
+
+    return flattenedLayers;
+  }, [layers, getLayerTree]);
 
   // Select layer
   const handleSelectLayer = (layer: Layer) => {
@@ -92,8 +126,16 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({ className }) => {
   // Render a single layer item
   const renderLayerItem = (layer: Layer) => {
     const thumbnail = layer.imageDataUrl || layer.referenceImageUrls?.[0];
-    const isActive = layer.id === activeGlobalLayerId;
-    const isBaseCanvas = layer.id === BASE_CANVAS_ID; 
+    const isActive = layer.type === LayerType.Global
+      ? layer.id === activeGlobalLayerId
+      : layer.id === activeSectionalLayerId;
+    const isBaseCanvas = layer.id === BASE_CANVAS_ID;
+    const isChild = layer.isChild || layer.type === LayerType.Sectional;
+
+    // Check if this global layer should have reduced opacity (when its child sectional layer is active)
+    const shouldReduceOpacity = layer.type === LayerType.Global &&
+      activeSectionalLayerId &&
+      layers.find(l => l.id === activeSectionalLayerId)?.parentId === layer.id;
 
     return (
       <li
@@ -107,12 +149,27 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({ className }) => {
         className={cn(
           "flex items-center p-2 rounded-md transition cursor-pointer group",
           "hover:border-gray-300",
-          isActive 
-            ? "bg-gray-800 text-white" 
+          isActive
+            ? "bg-gray-800 text-white"
             : "bg-secondary hover:bg-gray-600/50 text-gray-400 border-transparent",
           draggedId === layer.id && "opacity-50",
+          isChild && "ml-6", // Add indentation for sectional layers
+          shouldReduceOpacity && "opacity-80", 
         )}
       >
+        {/* Layer Type Icon */}
+        {isChild ? (
+          <Brush className={cn(
+            "w-4 h-4 mr-2 flex-shrink-0",
+            isActive ? "text-white" : "text-orange-500"
+          )} />
+        ) : (
+          <Folder className={cn(
+            "w-4 h-4 mr-2 flex-shrink-0",
+            isActive ? "text-white" : "text-blue-500"
+          )} />
+        )}
+
         {/* Drag Handle */}
         <GripVertical className={cn(
           "w-4 h-4 mr-2 flex-shrink-0",

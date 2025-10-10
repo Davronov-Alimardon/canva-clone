@@ -25,45 +25,22 @@ export const DrawSidebar = ({
   activeTool,
   onChangeActiveTool,
 }: DrawSidebarProps) => {
-  const colorValue = editor?.getActiveStrokeColor() || STROKE_COLOR;
-  const widthValue = editor?.getActiveStrokeWidth() || STROKE_WIDTH;
+   useEffect(() => {
+    if (activeTool === "draw" && editor) {
+      console.log('🎨 DrawSidebar - Enabling regular drawing mode');
+      // Clean up any existing drawing mode first
+      editor.disableDrawingMode();
+      editor.enableDrawingMode(); // Regular Fabric.js drawing
+    }
+  }, [activeTool, editor]);
 
- useEffect(() => {
-  if (!editor?.canvas) return;
-
-  const canvas = editor.canvas;
-  const canvasWrapper = canvas.getElement();
-  if (!canvasWrapper) return;
-
-  
-  if (activeTool === "draw") {
-    // Enable drawing mode
-    editor.enableDrawingMode();
-    
-    // Force disable selection and set cursor
-    canvas.selection = false;
-    canvas.defaultCursor = "crosshair";
-    canvasWrapper.style.cursor = "crosshair";
-    
-    // Disable all selection-related behaviors
-    canvas.forEachObject((obj) => {
-      obj.selectable = false;
-    });
-    
-  } else {
-    // Disable drawing mode and restore normal behavior
-    editor.disableDrawingMode();
-    canvas.selection = true;
-    canvas.defaultCursor = "default";
-    canvasWrapper.style.cursor = "default";
-    
-    // Re-enable object selection
-    canvas.forEachObject((obj) => {
-      obj.selectable = true;
-    });
+  if (activeTool !== "draw") {
+    return null;
   }
 
-}, [activeTool, editor]);
+  const colorValue = editor?.getDrawToolColor() || STROKE_COLOR;
+  const widthValue = editor?.getDrawToolWidth() || STROKE_WIDTH;
+
 
   const onClose = () => {
     editor?.disableDrawingMode();
@@ -71,11 +48,11 @@ export const DrawSidebar = ({
   };
 
   const onColorChange = (value: string) => {
-    editor?.changeStrokeColor(value);
+    editor?.changeDrawToolColor(value);
   };
 
   const onWidthChange = (value: number) => {
-    editor?.changeStrokeWidth(value);
+    editor?.changeDrawToolWidth(value);
   };
 
   return (

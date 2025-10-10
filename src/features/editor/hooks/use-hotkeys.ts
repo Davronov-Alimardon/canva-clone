@@ -1,24 +1,30 @@
 import { fabric } from "fabric";
 import { useEvent } from "react-use";
-import { BASE_CANVAS_ID, useLayersStore } from "../hooks/use-layer-store";
-import { FabricObjectWithLayer } from "../types";
+import { useLayersStore } from "../hooks/use-layer-store";
+import { ActiveTool, Editor } from "../types";
 
 interface UseHotkeysProps {
   canvas: fabric.Canvas | null;
+  editor: Editor | undefined;
   undo: () => void;
   redo: () => void;
   save: (skip?: boolean) => void;
   copy: () => void;
   paste: () => void;
+  activeTool: ActiveTool;
+  onChangeActiveTool: (tool: ActiveTool) => void;
 }
 
 export const useHotkeys = ({
   canvas,
+  editor,
   undo,
   redo,
   save,
   copy,
   paste,
+  activeTool,
+  onChangeActiveTool,
 }: UseHotkeysProps): void => {
   useEvent("keydown", (event: KeyboardEvent) => {
     const isCtrlKey = event.ctrlKey || event.metaKey;
@@ -29,40 +35,48 @@ export const useHotkeys = ({
 
     if (isInput) return;
 
-   if (event.key === "Delete" || event.key === "Backspace") {
-  const selectedObjects = canvas?.getActiveObjects() ?? [];
-  
-  if (selectedObjects.length > 0) {
-    event.preventDefault();
-    
-    // Remove from canvas
-    selectedObjects.forEach((obj) => canvas?.remove(obj));
-    canvas?.discardActiveObject();
-    canvas?.renderAll();
-    
-    // Update the active layer AND delete it if empty
-    const activeGlobalLayer = useLayersStore.getState().getActiveGlobalLayer();
-    if (activeGlobalLayer && canvas) {
-      const currentObjects = canvas.getObjects().filter(obj => 
-        obj.name !== "clip" && 
-        (obj as FabricObjectWithLayer).layerId === activeGlobalLayer.id
-      );
-      
-      if (currentObjects.length === 0 && activeGlobalLayer.id !== BASE_CANVAS_ID) {
-        useLayersStore.getState().deleteLayer(activeGlobalLayer.id);
-      } else {
-        // Update the layer with current objects
-        const serializedObjects = currentObjects.map(obj => obj.toObject());
-        useLayersStore.getState().updateLayer(activeGlobalLayer.id, { 
-          objects: serializedObjects 
-        });
+    // Exit drawing/masking mode with ESC key
+    if (event.key === "Escape") {
+      if (activeTool === "draw" || activeTool === "brush") {
+        event.preventDefault();
+        console.log('🔄 ESC pressed - exiting drawing/masking mode');
+
+        // Perform the same cleanup as the close buttons
+        if (activeTool === "brush") {
+          // Reset brush mode for mask tool
+          useLayersStore.getState().setBrushMode(false);
+        }
+
+        // For both tools, reset the canvas drawing mode and cursor immediately
+        if (canvas) {
+          canvas.isDrawingMode = false;
+          canvas.defaultCursor = 'default';
+          canvas.selection = true;
+
+          // Force cursor reset
+          const canvasElement = canvas.getElement();
+          if (canvasElement) {
+            canvasElement.style.cursor = 'default';
+          }
+
+          canvas.renderAll();
+        }
+
+        onChangeActiveTool("select");
       }
+      return;
     }
-    
-    save();
-  }
-  return;
-}
+
+    if (event.key === "Delete" || event.key === "Backspace") {
+      const selectedObjects = canvas?.getActiveObjects() ?? [];
+
+      if (selectedObjects.length > 0 && editor) {
+        event.preventDefault();
+        // Use our custom delete function with inpainting/other object classification
+        editor.delete();
+      }
+      return;
+    }
     // Undo
     if (isCtrlKey && event.key === "z") {
       event.preventDefault();

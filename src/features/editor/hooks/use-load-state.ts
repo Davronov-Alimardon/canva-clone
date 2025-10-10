@@ -1,14 +1,12 @@
   import { fabric } from "fabric";
   import { useEffect, useRef } from "react";
 
-  import { JSON_KEYS } from "@/features/editor/types";
+  import { useLayersStore } from "./use-layer-store";
 
   interface UseLoadStateProps {
     autoZoom: () => void;
     canvas: fabric.Canvas | null;
     initialState: React.MutableRefObject<string | undefined>;
-    canvasHistory: React.MutableRefObject<string[]>;
-    setHistoryIndex: React.Dispatch<React.SetStateAction<number>>;
   }
 
   type CanvasWithContextContainer = fabric.Canvas & {
@@ -19,10 +17,9 @@
     canvas,
     autoZoom,
     initialState,
-    canvasHistory,
-    setHistoryIndex,
   }: UseLoadStateProps) => {
     const initialized = useRef(false);
+    // Load state will create initial baseline only on project load
 
     const renderCanvas = (target: fabric.Canvas | null) => {
       if (!target) {
@@ -49,16 +46,14 @@
 
       target.discardActiveObject();
     };
+    
 
     useEffect(() => {
       if (!initialized.current && initialState?.current && canvas) {
         const data = JSON.parse(initialState.current);
 
         canvas.loadFromJSON(data, () => {
-          const currentState = JSON.stringify(canvas.toJSON(JSON_KEYS));
-
-          canvasHistory.current = [currentState];
-          setHistoryIndex(0);
+          // TODO: Create baseline after loading project state
           autoZoom();
         });
         initialized.current = true;
@@ -69,17 +64,13 @@
         clearCanvasObjects(canvas);
         renderCanvas(canvas);
 
-        const currentSnapshot = JSON.stringify(canvas.toJSON(JSON_KEYS));
-        canvasHistory.current = [currentSnapshot];
-        setHistoryIndex(0);
+        // No automatic baseline for new documents
         autoZoom();
         initialized.current = true;
       }
     }, [
       canvas,
       autoZoom,
-      initialState, 
-      canvasHistory,
-      setHistoryIndex, 
+      initialState,
     ]);
   };

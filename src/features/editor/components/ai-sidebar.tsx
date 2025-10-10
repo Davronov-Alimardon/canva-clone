@@ -1,7 +1,7 @@
-// AISidebar.tsx - keep UI but remove AI generation logic
+// AISidebar.tsx - cleaned up version
 import { useState, useRef, useEffect } from "react";
 import { useLayersStore } from "@/features/editor/hooks/use-layer-store";
-import { ActiveTool, LayerType } from "@/features/editor/types";
+import { ActiveTool, LayerType, FabricObjectWithLayer } from "@/features/editor/types";
 import { ToolSidebarClose } from "@/features/editor/components/tool-sidebar-close";
 import { ToolSidebarHeader } from "@/features/editor/components/tool-sidebar-header";
 import { cn } from "@/lib/utils";
@@ -25,20 +25,18 @@ export const AiSidebar = ({
   onChangeActiveTool,
   defaultTab = "global",
 }: AiSidebarProps) => {
-  console.log('🔍 AI Sidebar - Current activeTool:', activeTool);
+  
   const [currentTab, setCurrentTab] = useState<"global" | "sectional">(defaultTab);
   const [isGenerating, setIsGenerating] = useState(false);
   const [brushSize, setBrushSize] = useState(20);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { 
-    layers, 
-    activeGlobalLayerId, 
-    getActiveGlobalLayer, 
-    updateLayer, 
-    setActiveSectionalLayer, 
-    addSectionalLayer,
-    activeSectionalLayerId,
-    getActiveSectionalLayer 
+  
+  const {
+    layers,
+    getActiveGlobalLayer,
+    updateLayer,
+    getActiveSectionalLayer,
+    setActiveSectionalLayer
   } = useLayersStore();
   
   useEffect(() => {
@@ -46,52 +44,39 @@ export const AiSidebar = ({
   }, [defaultTab]);
 
   const activeGlobalLayer = getActiveGlobalLayer();
-  console.log('🔍 AI Sidebar - activeGlobalLayer:', activeGlobalLayer);
+  const activeSectionalLayer = getActiveSectionalLayer();
   
-  // This condition might be returning null
+  // Return early if no active global layer
   if (!activeGlobalLayer) {
-    console.log('❌ AI Sidebar returning null because no activeGlobalLayer');
     return null;
   }
-  const activeSectionalLayer = getActiveSectionalLayer();
-  const sectionalLayers = layers.filter(l => 
-    l.type === LayerType.Sectional && l.parentId === activeGlobalLayerId
-  );
+
   const currentLayer = currentTab === "global" ? activeGlobalLayer : activeSectionalLayer;
 
-  // Update the tool selection to ensure proper layer activation
-  const handleToolSelect = (tool: ActiveTool) => {
-    console.log('🛠️ Tool selected:', tool, 'on tab:', currentTab);
-
-    console.log('🎯 Current layer:', currentLayer);
-    console.log('🎯 Layer has image:', !!currentLayer?.imageDataUrl);
-    console.log('🎯 Layer objects count:', currentLayer?.objects?.length || 0);
-    
+  // Helper function to enable brush drawing
+const enableBrushDrawing = () => {
+  
+  useLayersStore.getState().setBrushMode(true, activeSectionalLayer?.id);
+  
+  setTimeout(() => {
     if (editor?.canvas) {
-      const objects = editor.canvas.getObjects();
-      console.log('🎨 Canvas objects:', objects.map(obj => ({
-        type: obj.type,
-        layerId: (obj as any).layerId,
-        name: obj.name,
-        visible: obj.visible
-      })));
+      editor.canvas.defaultCursor = 'crosshair';
+      editor.canvas.selection = false;
+      editor.canvas.renderAll();
     }
     
-    // Handle brush tool in sectional tab
-    if (currentTab === "sectional" && tool === "brush") {
-      if (!activeSectionalLayer && activeGlobalLayerId) {
-        const newSectionalLayerId = addSectionalLayer(activeGlobalLayerId);
-        if (newSectionalLayerId) {
-          setActiveSectionalLayer(newSectionalLayerId);
-        }
-      }
+    if (editor) {
+      editor.enableMaskDrawingMode();
+      // Mask tool now manages its own color and width state
+      editor.changeMaskToolWidth(brushSize);
     }
-    
-    // Simply change the tool - let parent handle the rest
-    onChangeActiveTool(tool);
-  };
+  }, 100);
+};
 
   const onClose = () => {
+    // Reset brush mode state first
+    useLayersStore.getState().setBrushMode(false);
+
     // Disable drawing before closing
     if (editor) {
       editor.disableDrawingMode();
@@ -99,12 +84,39 @@ export const AiSidebar = ({
     onChangeActiveTool("select");
   };
 
+  const handleToolSelect = (tool: ActiveTool) => {
+  if (tool === "brush") {
+    // Clean up any existing drawing mode first
+    if (editor) {
+      editor.disableDrawingMode();
+    }
+
+    // For sectional tab, clear any previous active layer and enable drawing mode
+    setActiveSectionalLayer(null); // Clear previous active layer for new session
+    onChangeActiveTool("brush");
+    setTimeout(() => enableBrushDrawing(), 100);
+    
+  } else {
+    // Clean up any existing drawing mode first
+    if (editor) {
+      editor.disableDrawingMode();
+    }
+    // For other tools, just change the tool
+    onChangeActiveTool(tool);
+  }
+};
+
   const handleTabChange = (tab: "global" | "sectional") => {
+     if (activeTool === "brush") {
+    useLayersStore.getState().setBrushMode(false);
+    if (editor) {
+      editor.disableDrawingMode();
+    }
+  }
     setCurrentTab(tab);
     
     // Clear sectional layer when switching to global tab
     if (tab === "global") {
-      console.log('🎯 Clearing sectional layer activation');
       setActiveSectionalLayer(null);
     }
   };
@@ -140,9 +152,9 @@ export const AiSidebar = ({
   const handleBrushSizeChange = (value: number[]) => {
     const newWidth = value[0];
     setBrushSize(newWidth);
-    // Update canvas brush size if in brush mode
+    // Update mask tool brush size if in brush mode
     if (editor && activeTool === "brush") {
-      editor.changeStrokeWidth(newWidth);
+      editor.changeMaskToolWidth(newWidth);
     }
   };
 
@@ -167,10 +179,6 @@ export const AiSidebar = ({
     }
   };
 
-  if (!activeGlobalLayer) {
-    return null;
-  }
-
   const hasMaskPaths = currentLayer?.objects?.some(
     (o: any) => o.type?.toLowerCase() === "path"
   );
@@ -194,7 +202,7 @@ export const AiSidebar = ({
     <aside
       className={cn(
         "bg-white relative border-r z-[40] w-[360px] h-full flex flex-col",
-        activeTool === "ai"  || ["brush", "eraser", "pan", "draw"].includes(activeTool) ? "visible" : "hidden"
+        activeTool === "ai"  || ["brush", "eraser", "pan"].includes(activeTool) ? "visible" : "hidden"
       )}
     >
       <ToolSidebarHeader
@@ -293,6 +301,15 @@ export const AiSidebar = ({
           <div className="space-y-4">
             {activeSectionalLayer ? (
               <>
+                {/* Active Layer Info */}
+                <div className="bg-blue-50 p-3 rounded-md border border-blue-200">
+                  <p className="text-sm font-medium text-blue-800">Active Mask Layer</p>
+                  <p className="text-xs text-blue-600">{activeSectionalLayer.name}</p>
+                  <p className="text-xs text-blue-500">
+                    Masks drawn will be saved to this layer
+                  </p>
+                </div>
+
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Inpainting Prompt</label>
                   <Textarea
@@ -437,4 +454,4 @@ export const AiSidebar = ({
       <ToolSidebarClose onClick={onClose} />
     </aside>
   );
-};
+}; 

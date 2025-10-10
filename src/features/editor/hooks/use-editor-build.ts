@@ -6,9 +6,20 @@ import {
   transformText,
 } from "@/features/editor/utils";
 import { findWorkspace, centerObject } from "./use-editor-utils";
-import { BuildEditorProps, Editor, JSON_KEYS, FONT_SIZE, SerializedFabricObject, FabricObjectWithLayer } from "@/features/editor/types";
+import { BuildEditorProps, Editor, JSON_KEYS, FONT_SIZE, SerializedFabricObject, FabricObjectWithLayer, LayerType } from "@/features/editor/types";
 import { BASE_CANVAS_ID, useLayersStore  } from "./use-layer-store";
 
+
+// Object classification for sectional layers
+const INPAINTING_OBJECT_TYPES = ['path']; // Mask strokes that define masking purpose
+const OTHER_OBJECT_TYPES = ['image', 'textbox', 'rect', 'circle']; // Supporting content
+
+// Helper functions for object classification
+const isInpaintingObject = (obj: fabric.Object): boolean =>
+  INPAINTING_OBJECT_TYPES.includes(obj.type || '');
+
+const isOtherObject = (obj: fabric.Object): boolean =>
+  !isInpaintingObject(obj);
 
 export function buildEditor({
   save,
@@ -31,6 +42,17 @@ export function buildEditor({
   strokeDashArray,
   setStrokeDashArray,
 }: BuildEditorProps): Editor {
+  // Independent tool states to prevent cross-contamination
+  const drawToolState = {
+    color: "rgba(0,0,0,1)", // black default
+    width: 5
+  };
+
+  const maskToolState = {
+    color: "#ff0000", // always red
+    width: 20
+  };
+
   const generateSaveOptions = () => {
     const workspace = findWorkspace(canvas);
 
@@ -50,19 +72,57 @@ export function buildEditor({
     };
   };
 
-  const saveImage = (format: "png" | "jpg" | "svg") => {
+  const saveImage = (format: "png" | "jpg" | "svg", exportMode: "current-layer" | "flattened" = "flattened") => {
     const options = generateSaveOptions();
     canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+
+    // Store original visibility states
+    const originalVisibility = new Map<fabric.Object, boolean>();
+
+    // Get current layer context
+    const { activeGlobalLayerId, activeSectionalLayerId } = useLayersStore.getState();
+    const currentLayerId = activeSectionalLayerId || activeGlobalLayerId;
+
+    canvas.getObjects().forEach(obj => {
+      if (obj.name === "clip") return; // Skip workspace
+
+      // Store original visibility
+      originalVisibility.set(obj, obj.visible || true);
+
+      if (exportMode === "current-layer") {
+        // Show only objects from current layer
+        const isFromCurrentLayer = 'layerId' in obj && obj.layerId === currentLayerId;
+        obj.set('visible', isFromCurrentLayer);
+      } else if (exportMode === "flattened") {
+        // Hide mask paths (sectional layer objects), show everything else
+        const isMaskPath = obj.type === 'path' && 'layerId' in obj;
+        obj.set('visible', !isMaskPath);
+      }
+    });
+
+    // Force re-render with new visibility
+    canvas.renderAll();
+
+    // Generate export
     const dataUrl = canvas.toDataURL(options);
+
+    // Restore original visibility
+    originalVisibility.forEach((originalVisible, obj) => {
+      obj.set('visible', originalVisible);
+    });
+
+    // Re-render with restored visibility
+    canvas.renderAll();
+
     downloadFile(dataUrl, format);
   };
 
   const saveJson = async () => {
-  const { layers, activeGlobalLayerId } = useLayersStore.getState();
-  
+  const { layers, activeGlobalLayerId, clearOperationHistory } = useLayersStore.getState();
+
   // Get current canvas state
   const canvasData = canvas.toJSON(JSON_KEYS);
-  
+
   // Create enhanced save data with layer information
   const saveData = {
     timestamp: new Date().toISOString(),
@@ -85,11 +145,14 @@ export function buildEditor({
   };
 
   await transformText(canvasData.objects);
-  
+
   const fileString = `data:text/json;charset=utf-8,${encodeURIComponent(
     JSON.stringify(saveData, null, "\t"),
   )}`;
   downloadFile(fileString, "json");
+
+  // Clear operation history after manual save (create snapshot)
+  clearOperationHistory();
 };
 
   const loadJson = (json: string) => {
@@ -117,7 +180,7 @@ export function buildEditor({
           layers: layers,
           activeGlobalLayerId: activeGlobalLayerId,
         });
-        
+
         // Re-tag all objects with their layer IDs using proper typing
         const allObjects = canvas.getObjects();
         allObjects.forEach(obj => {
@@ -125,26 +188,31 @@ export function buildEditor({
             // Find which layer this object belongs to by matching object properties
             const objectData = canvasData.objects?.find((o: SerializedFabricObject) => {
               // Match objects by multiple properties since Fabric doesn't guarantee stable IDs
-              return o.left === obj.left && 
-                     o.top === obj.top && 
+              return o.left === obj.left &&
+                     o.top === obj.top &&
                      o.type === obj.type;
             });
-            
+
             if (objectData && objectData.layerId) {
               // Use the store method to properly tag the object
               useLayersStore.getState().tagObjectWithActiveLayer(obj);
             }
           }
         });
-        
+
         // Activate the saved active layer
         useLayersStore.getState().setActiveGlobalLayer(activeGlobalLayerId);
-        
+
+        // Clear operation history to create initial snapshot after project load
+        useLayersStore.getState().clearOperationHistory();
+
         canvas.renderAll();
       });
     } else {
       // Legacy format - load as before
       canvas.loadFromJSON(parsed, () => {
+        // Clear operation history to create initial snapshot after legacy project load
+        useLayersStore.getState().clearOperationHistory();
         canvas.renderAll();
       });
     }
@@ -159,11 +227,215 @@ export function buildEditor({
     canvas.setActiveObject(object);
   };
 
+  // === Drawing Mode Implementations ===
+
+  // Regular drawing mode for DrawSidebar (freehand art)
+  const enableDrawingMode = () => {
+    console.log('🔧 Enabling REGULAR drawing mode (for draw tool)');
+
+    // Clean up any previous drawing state first
+    disableDrawingMode();
+
+    // Use Fabric.js built-in drawing system for freehand art
+    canvas.isDrawingMode = true;
+
+    // Set up Fabric.js free drawing brush with draw tool's independent state
+    if (canvas.freeDrawingBrush) {
+      canvas.freeDrawingBrush.width = drawToolState.width;
+      canvas.freeDrawingBrush.color = drawToolState.color;
+      canvas.freeDrawingBrush.strokeLineCap = 'round';
+      canvas.freeDrawingBrush.strokeLineJoin = 'round';
+    }
+
+    canvas.defaultCursor = 'crosshair';
+    canvas.selection = false;
+
+    console.log('✅ Regular drawing mode ready with black color');
+  };
+
+  // Mask drawing mode for AI Sidebar (mask creation)
+  const enableMaskDrawingMode = () => {
+
+    // Clean up any previous drawing state first
+    disableDrawingMode();
+
+    const storeState = useLayersStore.getState();
+    const activeLayer = storeState.activeSectionalLayerId
+      ? storeState.getActiveSectionalLayer()
+      : storeState.getActiveGlobalLayer();
+
+
+    // USE Fabric's built-in drawing system for masks
+    canvas.isDrawingMode = true;
+
+    // Set up Fabric free drawing brush with mask tool's independent state
+    if (canvas.freeDrawingBrush) {
+      canvas.freeDrawingBrush.width = maskToolState.width;
+      canvas.freeDrawingBrush.color = maskToolState.color; // Always red
+      canvas.freeDrawingBrush.strokeLineCap = 'round';
+      canvas.freeDrawingBrush.strokeLineJoin = 'round';
+    }
+    
+    // Set canvas properties for mask drawing
+    canvas.selection = false;
+    canvas.defaultCursor = 'crosshair';
+
+    // Make all objects non-selectable during mask drawing
+    canvas.getObjects().forEach(obj => {
+      if (obj.name !== "clip") {
+        obj.selectable = false;
+        obj.evented = false;
+      }
+    });
+
+    // Store layer ID locally to avoid dependency on global state that gets cleared
+    let capturedSectionalLayerId: string | null = null;
+
+    // Add path:created event listener to capture completed brush strokes
+    canvas.on('path:created', async (e) => {
+
+      if (!e || typeof e !== 'object' || !('path' in e)) {
+        return;
+      }
+      const path = e.path as fabric.Path;
+      if (!path) {
+        return;
+      }
+
+      // Get or create sectional layer for this brush session using transactions
+      let targetSectionalLayerId = storeState.activeSectionalLayerId;
+
+      if (!targetSectionalLayerId) {
+
+        // Start a transaction for mask creation
+        storeState.startTransaction('Create Mask Layer');
+
+        // No active sectional layer, auto-create new one for this brush session
+        const activeGlobalLayer = storeState.getActiveGlobalLayer();
+        if (!activeGlobalLayer) {
+          storeState.rollbackTransaction();
+          return;
+        }
+
+        targetSectionalLayerId = await storeState.addSectionalLayer(
+          activeGlobalLayer.id,
+          `Mask ${Date.now()}`
+        );
+
+        if (targetSectionalLayerId) {
+          storeState.setActiveSectionalLayer(targetSectionalLayerId);
+
+          // The ADD_OBJECT operation will be added to this transaction by canvas events
+          // We'll commit the transaction after the object is added
+        } else {
+          storeState.rollbackTransaction();
+          return;
+        }
+      }
+
+      // Tag the path object with the sectional layer ID
+      if (targetSectionalLayerId && path && typeof path === 'object' && 'set' in path && typeof path.set === 'function') {
+        (path as any).layerId = targetSectionalLayerId;
+
+        // Store the layer ID locally so mouse:up can use it even if global state is cleared
+        capturedSectionalLayerId = targetSectionalLayerId;
+
+        console.log(`🖌️ MASK: Path tagged successfully`, {
+          objectId: (path as any).objectId,
+          layerId: (path as any).layerId
+        });
+      }
+    });
+
+    // Add mouse up detection to auto-exit drawing mode
+    canvas.on('mouse:up', () => {
+      // Use captured layer ID instead of global state (which gets cleared by Fabric.js)
+      const currentSectionalLayerId = capturedSectionalLayerId;
+      if (currentSectionalLayerId) {
+        // Find all path objects belonging to this layer
+        const layerObjects = canvas.getObjects().filter(obj => {
+          if ('layerId' in obj) {
+            return obj.layerId === currentSectionalLayerId && obj.type === 'path';
+          }
+          return false;
+        });
+
+        if (layerObjects.length > 0) {
+          // Select the mask objects for editing with blue handles
+          if (layerObjects.length === 1) {
+            canvas.setActiveObject(layerObjects[0]);
+          } else {
+            // Multiple paths - create selection group
+            const selection = new fabric.ActiveSelection(layerObjects, { canvas });
+            canvas.setActiveObject(selection);
+          }
+        }
+
+        // Make layer active in panel
+        storeState.selectLayer(currentSectionalLayerId);
+      }
+
+      // Auto-exit drawing mode but keep selection enabled
+      disableDrawingMode();
+    });
+
+    console.log('✅ Mask drawing mode ready (using Fabric brush)');
+  };
+
+  // Disable both drawing modes
+  const disableDrawingMode = () => {
+
+    // Don't clear active sectional layer - let it remain selected
+    // Layer will be cleared when starting new brush session
+
+    // IMMEDIATE canvas state reset for UI responsiveness
+    canvas.isDrawingMode = false;
+    canvas.selection = true; // Enable selection to allow mask object manipulation
+    canvas.defaultCursor = 'default';
+
+    // Force immediate cursor reset
+    const canvasElement = canvas.getElement();
+    if (canvasElement) {
+      canvasElement.style.cursor = 'default';
+    }
+
+    // Reset Fabric brush if needed
+    if (canvas.freeDrawingBrush) {
+      canvas.freeDrawingBrush.width = 1; // Restore normal width
+    }
+
+    // Reset all objects to be selectable/evented
+    canvas.getObjects().forEach(obj => {
+      if (obj.name !== "clip") {
+        obj.selectable = true;
+        obj.evented = true;
+      }
+    });
+
+    // Remove ALL possible custom event listeners (comprehensive cleanup)
+    canvas.off('mouse:down');
+    canvas.off('mouse:move');
+    canvas.off('mouse:up');
+    canvas.off('path:created');
+    canvas.off('mouse:dblclick');
+    canvas.off('mouse:wheel');
+    canvas.off('mouse:over');
+    canvas.off('mouse:out');
+    
+    // Clean up temporary paths
+    const tempPaths = canvas.getObjects().filter(obj => 
+      obj.name === 'tempDrawingPath' || obj.name === 'tempMaskPath'
+    );
+    tempPaths.forEach(path => canvas.remove(path));
+    
+    canvas.renderAll();
+  };
+
   return {
     // === File Actions ===
-    savePng: () => saveImage("png"),
-    saveJpg: () => saveImage("jpg"),
-    saveSvg: () => saveImage("svg"),
+    savePng: (exportMode?: "current-layer" | "flattened") => saveImage("png", exportMode),
+    saveJpg: (exportMode?: "current-layer" | "flattened") => saveImage("jpg", exportMode),
+    saveSvg: (exportMode?: "current-layer" | "flattened") => saveImage("svg", exportMode),
     saveJson,
     loadJson,
 
@@ -175,7 +447,7 @@ export function buildEditor({
       return workspace ?? undefined; 
     },
 
-     // === Undo/Redo Methods ===
+    // === Undo/Redo Methods ===
     onUndo: (): void => {
       undo();
     },
@@ -184,7 +456,7 @@ export function buildEditor({
       redo();
     },
 
-  // === Zoom Controls ===
+    // === Zoom Controls ===
     zoomIn: (): void => {
       const zoom = canvas.getZoom();
       const newZoom = Math.min(5, zoom * 1.2); // Limit max zoom to 5x
@@ -199,146 +471,10 @@ export function buildEditor({
       canvas.requestRenderAll();
     },
 
-    // === Drawing Mode ===
-// In use-editor-build.ts - update the drawing mode to remove AI-specific logic
-enableDrawingMode: () => {
-  console.log('🔧 Switching to drawing mode');
-
-  const storeState = useLayersStore.getState();
-  const activeLayer = storeState.activeSectionalLayerId 
-    ? storeState.getActiveSectionalLayer() 
-    : storeState.getActiveGlobalLayer();
-  
-  console.log('🎯 Drawing on layer:', activeLayer?.id, activeLayer?.name);
-  
-  // COMPLETELY disable Fabric's drawing system
-  canvas.isDrawingMode = false;
-  
-  // Clear any Fabric free drawing brush
-  if (canvas.freeDrawingBrush) {
-    canvas.freeDrawingBrush.width = 0;
-    canvas.freeDrawingBrush.color = "transparent";
-  }
-  
-  canvas.defaultCursor = 'crosshair';
-  
-  let isDrawing = false;
-  let points: { x: number; y: number }[] = [];
-  
-  canvas.off('mouse:down');
-  canvas.off('mouse:move');
-  canvas.off('mouse:up');
-  
-  canvas.on('mouse:down', (e: fabric.IEvent) => {
-    if (e.pointer) {
-      isDrawing = true;
-      points = [{ x: e.pointer.x, y: e.pointer.y }];
-      console.log('🎨 Drawing STARTED at:', e.pointer.x, e.pointer.y);
-    }
-  });
-  
-  canvas.on('mouse:move', (e: fabric.IEvent) => {
-    if (isDrawing && e.pointer) {
-      points.push({ x: e.pointer.x, y: e.pointer.y });
-      
-      // Create temporary path for visual feedback
-      const pathString = points.map((point, index) => 
-        `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`
-      ).join(' ');
-      
-      // Remove previous temporary path if it exists
-      const existingPaths = canvas.getObjects().filter(obj => obj.name === 'tempDrawingPath');
-      existingPaths.forEach(path => canvas.remove(path));
-      
-      const tempPath = new fabric.Path(pathString, {
-        stroke: strokeColor, // Use current stroke color instead of hardcoded red
-        strokeWidth: strokeWidth, // Use current stroke width
-        fill: "",
-        strokeLineCap: 'round',
-        strokeLineJoin: 'round',
-        name: 'tempDrawingPath' 
-      });
-      
-      canvas.add(tempPath);
-      canvas.renderAll();
-    }
-  });
-  
-  canvas.on('mouse:up', () => {
-    if (isDrawing && points.length > 1) {
-      isDrawing = false;
-      
-      // Create final path
-      const pathString = points.map((point, index) => 
-        `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`
-      ).join(' ');
-      
-      const finalPath = new fabric.Path(pathString, {
-        stroke: strokeColor, // Use current stroke color
-        strokeWidth: strokeWidth, // Use current stroke width
-        fill: "",
-        strokeLineCap: 'round',
-        strokeLineJoin: 'round'
-      });
-      
-      // Remove temporary paths
-      const tempPaths = canvas.getObjects().filter(obj => obj.name === 'tempDrawingPath');
-      tempPaths.forEach(path => canvas.remove(path));
-      
-      // Add final path
-      canvas.add(finalPath);
-      useLayersStore.getState().tagObjectWithActiveLayer(finalPath);
-      
-      console.log('🎨 Drawing FINISHED - points:', points.length);
-      console.log('✅ Final path created and tagged');
-      
-      // Save to layer (keep this for regular drawing functionality)
-      const storeState = useLayersStore.getState();
-      const activeLayer = storeState.activeSectionalLayerId 
-        ? storeState.getActiveSectionalLayer() 
-        : storeState.getActiveGlobalLayer();
-      
-      if (activeLayer) {
-        const currentObjects = activeLayer.objects || [];
-        const pathData = finalPath.toObject(['layerId']);
-        const newObjects = [...currentObjects, pathData];
-        storeState.updateLayer(activeLayer.id, { objects: newObjects }, true);
-        console.log('💾 Path saved to layer:', activeLayer.id);
-      }
-      
-      points = [];
-      canvas.renderAll();
-    }
-  });
-  
-  console.log('✅ Drawing mode ready');
-},
-
-disableDrawingMode: () => {
-  console.log('🔧 Disabling manual drawing mode');
-  
-  canvas.isDrawingMode = false;
-  
-  // Reset Fabric brush if needed
-  if (canvas.freeDrawingBrush) {
-    canvas.freeDrawingBrush.width = 1; // Restore normal width
-  }
-  
-  canvas.defaultCursor = 'default';
-  
-  // Remove custom event listeners
-  canvas.off('mouse:down');
-  canvas.off('mouse:move');
-  canvas.off('mouse:up');
-  canvas.off('path:created');
-  
-  // Clean up temporary paths
-  const tempPaths = canvas.getObjects().filter(obj => obj.name === 'tempDrawingPath');
-  tempPaths.forEach(path => canvas.remove(path));
-  
-  canvas.renderAll();
-  console.log('✅ Manual drawing disabled');
-},
+    // === Drawing Modes ===
+    enableDrawingMode,
+    enableMaskDrawingMode,
+    disableDrawingMode,
 
     // === Editing Actions ===
     changeFillColor: (value: string) => {
@@ -351,19 +487,19 @@ disableDrawingMode: () => {
     },
 
     addText: (value: string, options?: Partial<fabric.ITextboxOptions>) => {
-  const text = new fabric.Textbox(value, {
-    fill: fillColor,
-    ...options,
-  });
-  
-  // Use the store method to tag the object
-  useLayersStore.getState().tagObjectWithActiveLayer(text);
-  
-  addToCanvas(text);
-  save();
-},
+      const text = new fabric.Textbox(value, {
+        fill: fillColor,
+        ...options,
+      });
+      
+      // Use the store method to tag the object
+      useLayersStore.getState().tagObjectWithActiveLayer(text);
+      
+      addToCanvas(text);
+      save();
+    },
 
-     // === Font Controls ===
+    // === Font Controls ===
     getActiveFontFamily: (): string => {
       const active = canvas.getActiveObject();
       // Check if it's a text object and get its fontFamily
@@ -387,15 +523,15 @@ disableDrawingMode: () => {
     },
 
     getActiveFontWeight: (): number => {
-  const active = canvas.getActiveObject();
-  if (active && 'fontWeight' in active) {
-    const weight = (active as fabric.Textbox).fontWeight;
-    return typeof weight === 'number' ? weight : 400; 
-  }
-  return 400;
-},
+      const active = canvas.getActiveObject();
+      if (active && 'fontWeight' in active) {
+        const weight = (active as fabric.Textbox).fontWeight;
+        return typeof weight === 'number' ? weight : 400; 
+      }
+      return 400;
+    },
 
- getActiveFontStyle: (): string => {
+    getActiveFontStyle: (): string => {
       const active = canvas.getActiveObject();
       if (active && 'fontStyle' in active) {
         const style = (active as fabric.Textbox).fontStyle;
@@ -517,43 +653,62 @@ disableDrawingMode: () => {
     },
 
     // === Delete Method ===
-    // In use-editor-build.ts, update the delete method to match:
-// In use-editor-build.ts
-delete: (): void => {
-  const activeObjects = canvas.getActiveObjects();
-  activeObjects.forEach((obj) => {
-    canvas.remove(obj);
-  });
-
-  useLayersStore.getState().resetCanvasState();
-  canvas.discardActiveObject();
-
-  canvas.isDrawingMode = false;
-  canvas.selection = true;
-  canvas.defaultCursor = 'default';
-
-  canvas.renderAll();
-  
-  // ✅ Same logic as above
-  const activeGlobalLayer = useLayersStore.getState().getActiveGlobalLayer();
-  if (activeGlobalLayer) {
-    const currentObjects = canvas.getObjects().filter(obj => 
-      obj.name !== "clip" && 
-      (obj as FabricObjectWithLayer).layerId === activeGlobalLayer.id
-    );
-    
-    if (currentObjects.length === 0 && activeGlobalLayer.id !== BASE_CANVAS_ID) {
-      useLayersStore.getState().deleteLayer(activeGlobalLayer.id);
-    } else {
-      const serializedObjects = currentObjects.map(obj => obj.toObject());
-      useLayersStore.getState().updateLayer(activeGlobalLayer.id, { 
-        objects: serializedObjects 
+    delete: (): void => {
+      const activeObjects = canvas.getActiveObjects();
+      activeObjects.forEach((obj) => {
+        canvas.remove(obj);
       });
-    }
-  }
-  
-  save();
-},
+
+      useLayersStore.getState().resetCanvasState();
+      canvas.discardActiveObject();
+
+      canvas.isDrawingMode = false;
+      canvas.selection = true;
+      canvas.defaultCursor = 'default';
+
+      canvas.renderAll();
+
+      // Check and handle layer cleanup after deletion
+      const { layers, getActiveGlobalLayer } = useLayersStore.getState();
+
+      // Check all sectional layers to see if they've been emptied
+      const sectionalLayers = layers.filter(layer => layer.type === LayerType.Sectional);
+
+      sectionalLayers.forEach(sectionalLayer => {
+        // Classify objects by purpose: inpainting vs other
+        const allLayerObjects = canvas.getObjects().filter(obj =>
+          obj.name !== "clip" &&
+          (obj as FabricObjectWithLayer).layerId === sectionalLayer.id
+        );
+
+        const inpaintingObjects = allLayerObjects.filter(obj => isInpaintingObject(obj));
+
+        // Delete layer when no inpainting objects remain (regardless of other objects)
+        if (inpaintingObjects.length === 0) {
+          useLayersStore.getState().deleteLayer(sectionalLayer.id);
+        }
+      });
+
+      // Check active global layer
+      const activeGlobalLayer = getActiveGlobalLayer();
+      if (activeGlobalLayer) {
+        const currentObjects = canvas.getObjects().filter(obj =>
+          obj.name !== "clip" &&
+          (obj as FabricObjectWithLayer).layerId === activeGlobalLayer.id
+        );
+
+        if (currentObjects.length === 0 && activeGlobalLayer.id !== BASE_CANVAS_ID) {
+          useLayersStore.getState().deleteLayer(activeGlobalLayer.id);
+        } else {
+          const serializedObjects = currentObjects.map(obj => obj.toObject());
+          useLayersStore.getState().updateLayer(activeGlobalLayer.id, {
+            objects: serializedObjects
+          });
+        }
+      }
+      
+      save();
+    },
 
     // === Stroke / Brush Controls ===
     changeStrokeColor: (value: string) => {
@@ -592,6 +747,41 @@ delete: (): void => {
       return typeof width === "number" ? width : strokeWidth;
     },
 
+    // === Tool-Specific Controls ===
+    changeDrawToolColor: (value: string) => {
+      drawToolState.color = value;
+      // If currently in draw mode, update the brush immediately
+      if (canvas.isDrawingMode && canvas.freeDrawingBrush) {
+        canvas.freeDrawingBrush.color = value;
+      }
+      canvas.renderAll();
+      save();
+    },
+
+    changeDrawToolWidth: (value: number) => {
+      drawToolState.width = value;
+      // If currently in draw mode, update the brush immediately
+      if (canvas.isDrawingMode && canvas.freeDrawingBrush) {
+        canvas.freeDrawingBrush.width = value;
+      }
+      canvas.renderAll();
+      save();
+    },
+
+    changeMaskToolWidth: (value: number) => {
+      maskToolState.width = value;
+      // If currently in mask mode, update the brush immediately
+      if (canvas.isDrawingMode && canvas.freeDrawingBrush) {
+        canvas.freeDrawingBrush.width = value;
+      }
+      canvas.renderAll();
+      save();
+    },
+
+    getDrawToolColor: () => drawToolState.color,
+    getDrawToolWidth: () => drawToolState.width,
+    getMaskToolWidth: () => maskToolState.width,
+
     // === Stroke Dash Array Methods ===
     getActiveStrokeDashArray: (): number[] => {
       const active = canvas.getActiveObject();
@@ -608,7 +798,7 @@ delete: (): void => {
       save();
     },
 
-     // === Opacity Controls ===
+    // === Opacity Controls ===
     getActiveOpacity: (): number => {
       const active = canvas.getActiveObject();
       const opacity = active?.get("opacity");
@@ -646,7 +836,7 @@ delete: (): void => {
       }
     },
 
-     // === Fill Color Getter ===
+    // === Fill Color Getter ===
     getActiveFillColor: (): string => {
       const active = canvas.getActiveObject();
       const fill = active?.get("fill");
@@ -654,85 +844,85 @@ delete: (): void => {
     },
 
     // === Image Filter Controls ===
-changeImageFilter: (filter: string): void => {
-  const activeObjects = canvas.getActiveObjects();
-  
-  activeObjects.forEach((obj) => {
-    // Only apply filters to image objects
-    if (obj.type === 'image') {
-      const fabricImage = obj as fabric.Image;
+    changeImageFilter: (filter: string): void => {
+      const activeObjects = canvas.getActiveObjects();
       
-      // Remove existing filters
-      fabricImage.filters = [];
+      activeObjects.forEach((obj) => {
+        // Only apply filters to image objects
+        if (obj.type === 'image') {
+          const fabricImage = obj as fabric.Image;
+          
+          // Remove existing filters
+          fabricImage.filters = [];
+          
+          // Apply new filter based on the filter name
+          switch (filter) {
+            case 'grayscale':
+            case 'greyscale':
+              fabricImage.filters.push(new fabric.Image.filters.Grayscale());
+              break;
+            case 'sepia':
+              fabricImage.filters.push(new fabric.Image.filters.Sepia());
+              break;
+            case 'invert':
+              fabricImage.filters.push(new fabric.Image.filters.Invert());
+              break;
+            case 'brightness':
+              fabricImage.filters.push(new fabric.Image.filters.Brightness({ brightness: 0.1 }));
+              break;
+            case 'contrast':
+              fabricImage.filters.push(new fabric.Image.filters.Contrast({ contrast: 0.1 }));
+              break;
+            case 'saturation':
+              fabricImage.filters.push(new fabric.Image.filters.Saturation({ saturation: 0.1 }));
+              break;
+            case 'pixelate':
+              fabricImage.filters.push(new fabric.Image.filters.Pixelate({ blocksize: 8 }));
+              break;
+            case 'blur':
+              fabricImage.filters.push(new fabric.Image.filters.Blur({ blur: 0.1 }));
+              break;
+            case 'sharpen':
+              fabricImage.filters.push(new fabric.Image.filters.Convolute({
+                matrix: [0, -1, 0, -1, 5, -1, 0, -1, 0]
+              }));
+              break;
+            case 'emboss':
+              fabricImage.filters.push(new fabric.Image.filters.Convolute({
+                matrix: [1, 1, 1, 1, 0.7, -1, -1, -1, -1]
+              }));
+              break;
+            case 'blacknwhite':
+              // Use grayscale for black and white
+              fabricImage.filters.push(new fabric.Image.filters.Grayscale());
+              break;
+            case 'huerotate':
+              fabricImage.filters.push(new fabric.Image.filters.HueRotation({ rotation: 0.1 }));
+              break;
+            case 'blendcolor':
+              fabricImage.filters.push(new fabric.Image.filters.BlendColor({
+                color: '#FF0000',
+                mode: 'multiply'
+              }));
+              break;
+            case 'vibrance':
+              // Vibrance might not be available, use saturation instead
+              fabricImage.filters.push(new fabric.Image.filters.Saturation({ saturation: 0.2 }));
+              break;
+            case 'none':
+            default:
+              // No filter applied
+              break;
+          }
+          
+          // Apply the filters
+          fabricImage.applyFilters();
+        }
+      });
       
-      // Apply new filter based on the filter name
-      switch (filter) {
-        case 'grayscale':
-        case 'greyscale':
-          fabricImage.filters.push(new fabric.Image.filters.Grayscale());
-          break;
-        case 'sepia':
-          fabricImage.filters.push(new fabric.Image.filters.Sepia());
-          break;
-        case 'invert':
-          fabricImage.filters.push(new fabric.Image.filters.Invert());
-          break;
-        case 'brightness':
-          fabricImage.filters.push(new fabric.Image.filters.Brightness({ brightness: 0.1 }));
-          break;
-        case 'contrast':
-          fabricImage.filters.push(new fabric.Image.filters.Contrast({ contrast: 0.1 }));
-          break;
-        case 'saturation':
-          fabricImage.filters.push(new fabric.Image.filters.Saturation({ saturation: 0.1 }));
-          break;
-        case 'pixelate':
-          fabricImage.filters.push(new fabric.Image.filters.Pixelate({ blocksize: 8 }));
-          break;
-        case 'blur':
-          fabricImage.filters.push(new fabric.Image.filters.Blur({ blur: 0.1 }));
-          break;
-        case 'sharpen':
-          fabricImage.filters.push(new fabric.Image.filters.Convolute({
-            matrix: [0, -1, 0, -1, 5, -1, 0, -1, 0]
-          }));
-          break;
-        case 'emboss':
-          fabricImage.filters.push(new fabric.Image.filters.Convolute({
-            matrix: [1, 1, 1, 1, 0.7, -1, -1, -1, -1]
-          }));
-          break;
-        case 'blacknwhite':
-          // Use grayscale for black and white
-          fabricImage.filters.push(new fabric.Image.filters.Grayscale());
-          break;
-        case 'huerotate':
-          fabricImage.filters.push(new fabric.Image.filters.HueRotation({ rotation: 0.1 }));
-          break;
-        case 'blendcolor':
-          fabricImage.filters.push(new fabric.Image.filters.BlendColor({
-            color: '#FF0000',
-            mode: 'multiply'
-          }));
-          break;
-        case 'vibrance':
-          // Vibrance might not be available, use saturation instead
-          fabricImage.filters.push(new fabric.Image.filters.Saturation({ saturation: 0.2 }));
-          break;
-        case 'none':
-        default:
-          // No filter applied
-          break;
-      }
-      
-      // Apply the filters
-      fabricImage.applyFilters();
-    }
-  });
-  
-  canvas.renderAll();
-  save();
-},
+      canvas.renderAll();
+      save();
+    },
 
     // === Selection / Clipboard ===
     selectedObjects,

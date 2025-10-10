@@ -1,5 +1,6 @@
 import { fabric } from "fabric";
 import { useEffect } from "react";
+import { v4 as uuidv4 } from "uuid";
 import { ActiveTool, FabricObjectWithLayer } from "../types";
 import { useLayersStore } from "../hooks/use-layer-store";
 
@@ -197,6 +198,125 @@ export const useCanvasEvents = ({
       }
     };
 
+    const handleObjectAdding = async (e: fabric.IEvent) => {
+
+      if (!canvas || !e.path) return;
+
+      const { executeOperation, createOperation, tagObjectWithActiveLayer } = useLayersStore.getState();
+
+      // Tag the new object with the active layer
+      setTimeout(async () => {
+        const newObjects = canvas.getObjects().filter(obj => !(obj as any).objectId);
+
+        if (newObjects.length > 0) {
+          const newObject = newObjects[newObjects.length - 1];
+
+          // Get FRESH state right before tagging to ensure we have the latest sectional layer
+          const freshState = useLayersStore.getState();
+
+          // Tag with active layer
+          tagObjectWithActiveLayer(newObject);
+
+          // Add unique objectId
+          const objectId = uuidv4();
+          (newObject as any).objectId = objectId;
+
+          // Get the appropriate layer ID with FRESH state
+          const layerId = freshState.activeSectionalLayerId || freshState.activeGlobalLayerId;
+          if (!layerId) {
+            console.warn(`No active layer ID found!`);
+            return;
+          }
+
+          // Serialize the object
+          const objectData = newObject.toObject(['objectId', 'layerId']);
+
+          // Create ADD_OBJECT operation
+          const operation = createOperation(
+            'ADD_OBJECT',
+            { layerId, objectData, objectId },
+            { layerId, objectId }
+          );
+
+          // Check if there's an active transaction
+          const { currentTransaction, addOperationToTransaction, commitTransaction } = useLayersStore.getState();
+
+          if (currentTransaction) {
+            addOperationToTransaction(operation);
+
+            // If this is a mask operation, commit the transaction
+            if (newObject.type === 'path') {
+              await commitTransaction();
+            }
+          } else {
+            await executeOperation(operation);
+          }
+        }
+      }, 10);
+    };
+
+    const handleObjectModifying = async (e: fabric.IEvent) => {
+
+      if (!canvas || !e.target) return;
+
+      const { executeOperation, createOperation } = useLayersStore.getState();
+      const obj = e.target;
+      const objectId = (obj as any).objectId;
+      const layerId = (obj as any).layerId;
+
+      if (!objectId || !layerId) return;
+
+      // Store the current state as "before" and capture "after" on next tick
+      const beforeState = {
+        left: obj.left,
+        top: obj.top,
+        scaleX: obj.scaleX,
+        scaleY: obj.scaleY,
+        angle: obj.angle
+      };
+
+      setTimeout(async () => {
+        const afterState = {
+          left: obj.left,
+          top: obj.top,
+          scaleX: obj.scaleX,
+          scaleY: obj.scaleY,
+          angle: obj.angle
+        };
+
+        const operation = createOperation(
+          'MODIFY_OBJECT',
+          { layerId, objectId, changes: afterState, previousValues: beforeState },
+          { layerId, objectId, changes: beforeState, previousValues: afterState }
+        );
+
+        await executeOperation(operation);
+      }, 10);
+    };
+
+    const handleObjectRemoving = async (e: fabric.IEvent) => {
+
+      if (!canvas || !e.target) return;
+
+      const { executeOperation, createOperation } = useLayersStore.getState();
+      const obj = e.target;
+      const objectId = (obj as any).objectId;
+      const layerId = (obj as any).layerId;
+
+      if (!objectId || !layerId) return;
+
+      // Serialize the object for restoration
+      const objectData = obj.toObject(['objectId', 'layerId']);
+
+      const operation = createOperation(
+        'REMOVE_OBJECT',
+        { layerId, objectId },
+        { layerId, objectId, objectData }
+      );
+
+      await executeOperation(operation);
+    };
+
     const handleSelectionChange = (opt: fabric.IEvent): void => {
       // Disable selection during drawing OR masking
       if (!activeTool || ["draw", "brush", "eraser"].includes(activeTool)) return;
@@ -227,10 +347,18 @@ export const useCanvasEvents = ({
     canvas.on("mouse:move", handleMouseMove);
     canvas.on("mouse:up", handleMouseUp);
     canvas.on("mouse:wheel", handleMouseWheel);
-    
+
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('keyup', handleKeyUp);
-    
+
+    // Operation-based events (instead of snapshots)
+    canvas.on("before:path:created", handleObjectAdding);
+    canvas.on("object:scaling", handleObjectModifying);
+    canvas.on("object:moving", handleObjectModifying);
+    canvas.on("object:rotating", handleObjectModifying);
+    canvas.on("before:object:removed", handleObjectRemoving);
+
+    // Save events (after actions)
     canvas.on("object:added", handleSave);
     canvas.on("object:removed", handleSave);
     canvas.on("object:modified", handleSave);
@@ -244,11 +372,18 @@ export const useCanvasEvents = ({
       canvas.off("mouse:move", handleMouseMove);
       canvas.off("mouse:up", handleMouseUp);
       canvas.off("mouse:wheel", handleMouseWheel);
-      
+
       // Remove document listeners
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('keyup', handleKeyUp);
-      
+
+      // Clean up operation events
+      canvas.off("before:path:created", handleObjectAdding);
+      canvas.off("object:scaling", handleObjectModifying);
+      canvas.off("object:moving", handleObjectModifying);
+      canvas.off("object:rotating", handleObjectModifying);
+      canvas.off("before:object:removed", handleObjectRemoving);
+
       // Clean up canvas events
       canvas.off("object:added", handleSave);
       canvas.off("object:removed", handleSave);

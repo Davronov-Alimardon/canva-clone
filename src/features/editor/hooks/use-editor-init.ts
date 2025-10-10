@@ -1,10 +1,9 @@
 import { fabric } from "fabric";
-import { JSON_KEYS } from "@/features/editor/types";
 import { useCallback } from "react";
+import { useLayersStore } from "./use-layer-store";
+import { createWorkspace } from "./use-editor-utils";
 
 export function useEditorInit(
-  canvasHistory: React.MutableRefObject<string[]>,
-  setHistoryIndex: (n: number) => void,
   initialWidth: React.MutableRefObject<number>,
   initialHeight: React.MutableRefObject<number>,
 ) {
@@ -16,6 +15,7 @@ export function useEditorInit(
     initialCanvas: fabric.Canvas;
     initialContainer: HTMLDivElement;
   }) => {
+     const { setCanvas } = useLayersStore.getState();
      if (!initialCanvas || !initialCanvas.getContext()) {
       console.warn('Canvas not ready for initialization');
       return;
@@ -33,32 +33,14 @@ export function useEditorInit(
 
     const containerWidth = initialContainer.offsetWidth;
     const containerHeight = initialContainer.offsetHeight;
-    
+
     const targetWidth = initialWidth.current > 0 ? initialWidth.current : containerWidth;
     const targetHeight = initialHeight.current > 0 ? initialHeight.current : containerHeight;
 
-    const workspace = new fabric.Rect({
-      width: targetWidth,
-      height: targetHeight,
-      name: "clip",
-      fill: "white",
-      selectable: false,
-      hasControls: false,
-      shadow: new fabric.Shadow({
-        color: "rgba(0,0,0,0.8)",
-        blur: 5,
-      }),
-    });
+    // Create workspace using shared utility
+    createWorkspace(initialCanvas, targetWidth, targetHeight);
 
-  initialCanvas.setWidth(targetWidth);
-  initialCanvas.setHeight(targetHeight);
-
-  initialCanvas.add(workspace);
-  initialCanvas.centerObject(workspace);
-  initialCanvas.clipPath = workspace;
-
-  const snapshot = JSON.stringify(initialCanvas.toJSON(JSON_KEYS));
-    canvasHistory.current = [snapshot];
-    setHistoryIndex(0);
-  }, [canvasHistory, setHistoryIndex, initialWidth, initialHeight])
+    // Set canvas in store
+    setCanvas(initialCanvas);
+  }, [initialWidth, initialHeight])
 }
