@@ -471,6 +471,35 @@ export function buildEditor({
       canvas.requestRenderAll();
     },
 
+    autoZoom: (): void => {
+      const workspace = findWorkspace(canvas);
+      if (!workspace) return;
+
+      const container = canvas.getElement().parentElement;
+      if (!container) return;
+
+      const containerWidth = container.clientWidth;
+      const containerHeight = container.clientHeight;
+      const workspaceWidth = workspace.width || 0;
+      const workspaceHeight = workspace.height || 0;
+
+      if (workspaceWidth === 0 || workspaceHeight === 0) return;
+
+      // Calculate scale to fit both dimensions with padding
+      const scaleX = (containerWidth - 100) / workspaceWidth;
+      const scaleY = (containerHeight - 100) / workspaceHeight;
+      const scale = Math.min(scaleX, scaleY, 0.4); 
+
+      // Calculate center point of container for proper anchoring
+      const centerX = containerWidth / 2;
+      const centerY = containerHeight / 2;
+      const centerPoint = new fabric.Point(centerX, centerY);
+
+      // Use zoomToPoint for proper centering instead of setZoom
+      canvas.zoomToPoint(centerPoint, scale);
+      canvas.renderAll();
+    },
+
     // === Drawing Modes ===
     enableDrawingMode,
     enableMaskDrawingMode,

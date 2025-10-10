@@ -330,6 +330,7 @@ export interface Editor {
   getWorkspace: () => fabric.Object | undefined;
   zoomIn: () => void;
   zoomOut: () => void;
+  autoZoom: () => void;
 
   enableDrawingMode: () => void;
   disableDrawingMode: () => void;
@@ -502,6 +503,11 @@ export interface LayersState {
   addOperationToTransaction: (operation: CanvasOperation) => void;
   commitTransaction: () => Promise<void>;
   rollbackTransaction: () => Promise<void>;
+
+  restoreFromSnapshot: (
+    layers: Layer[],
+    canvasConfig: { width: number; height: number; backgroundColor: string }
+  ) => void;
 }
 
 export interface SerializedFabricObject {

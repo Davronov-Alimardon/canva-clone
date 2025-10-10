@@ -35,14 +35,6 @@ export const Editor = ({ initialData }: EditorProps) => {
   const [activeTool, setActiveTool] = useState<ActiveTool>("select");
   const [isCanvasInitialized, setIsCanvasInitialized] = useState(false);
 
-  const onClearSelection = useCallback(() => {
-    if (selectionDependentTools.includes(activeTool)) {
-      setActiveTool("select");
-    }
-  }, [activeTool]);
-
-  const { mutate } = useUpdateProject(initialData.id);
-
   const clearSelectionRef = useRef<() => void>(() => {
     console.log('Clear selection placeholder');
   });
@@ -123,31 +115,29 @@ export const Editor = ({ initialData }: EditorProps) => {
         initialContainer: containerRef.current,
       });
 
-      // Delay zoom and pan to ensure canvas is fully initialized
-      setTimeout(() => {
+      // Initialize canvas without setting zoom (autoZoom will handle it)
+      const initializeCanvas = () => {
         if (canvas?.getContext()) {
           try {
-            canvas.setZoom(0.8);
-            
-            const centerCanvas = () => {
-              const containerWidth = containerRef.current?.offsetWidth || 0;
-              const containerHeight = containerRef.current?.offsetHeight || 0;
-              const canvasWidth = (canvas?.getWidth() ?? 0) * 0.8;
-              const canvasHeight = (canvas?.getHeight() ?? 0) * 0.8;
-              
-              const centerX = (containerWidth - canvasWidth) / 2;
-              const centerY = (containerHeight - canvasHeight) / 2;
-              
-              canvas?.absolutePan(new fabric.Point(centerX, centerY));
-            };
-
-            centerCanvas();
+            canvas.renderAll();
             setIsCanvasInitialized(true);
           } catch (error) {
-            console.warn('Canvas zoom/pan failed:', error);
+            console.warn('Canvas initialization failed:', error);
           }
         }
-      }, 200);
+      };
+
+      // Use requestAnimationFrame for better timing
+      requestAnimationFrame(() => {
+        initializeCanvas();
+
+        // Auto-zoom canvas to fit container after initialization
+        setTimeout(() => {
+          if (editorRef.current?.autoZoom) {
+            editorRef.current.autoZoom();
+          }
+        }, 100);
+      });
 
     } catch (error) {
       console.error('Failed to initialize canvas:', error);
@@ -160,6 +150,21 @@ export const Editor = ({ initialData }: EditorProps) => {
     };
   }, [init]);
 
+  // === Window resize handler for canvas centering ===
+  useEffect(() => {
+    if (!isCanvasInitialized || !editor?.canvas) return;
+
+    const handleResize = () => {
+      // Canvas is now centered via CSS, but we may need to trigger re-render
+      if (editor?.canvas) {
+        editor.canvas.renderAll();
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isCanvasInitialized, editor?.canvas]);
+
   const editorRef = useRef(editor);
 
   useEffect(() => {
@@ -170,7 +175,7 @@ export const Editor = ({ initialData }: EditorProps) => {
 
   // === Layout ===
   return (
-    <div className="h-full flex flex-col">
+    <div className="w-full h-full flex flex-col">
       <Navbar
         id={initialData.id}
         editor={editorRef.current}
@@ -178,7 +183,10 @@ export const Editor = ({ initialData }: EditorProps) => {
         onChangeActiveTool={onChangeActiveTool}
       />
       <div className="w-full h-full flex">
+        {/* Main Sidebar */}
         <Sidebar activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
+
+        {/* Tool Sidebars - Absolute Positioned */}
         <StrokeColorSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
         <StrokeWidthSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
         <OpacitySidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
@@ -186,23 +194,23 @@ export const Editor = ({ initialData }: EditorProps) => {
         <FontSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
         <ImageSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
         <FilterSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
-        <AiSidebar 
-          editor={editor} 
-          activeTool={activeTool} 
-          onChangeActiveTool={onChangeActiveTool} 
+        <AiSidebar
+          editor={editor}
+          activeTool={activeTool}
+          onChangeActiveTool={onChangeActiveTool}
         />
         <DrawSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
         <SettingsSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
 
-        {/* Main Canvas Area */}
-        <main className="w-full bg-muted flex-1 overflow-auto relative flex flex-col">
+        {/* Main Workspace - Full Width */}
+        <main className="flex-1 h-full bg-muted overflow-hidden flex flex-col relative">
           <Toolbar
             editor={editor}
             activeTool={activeTool}
             onChangeActiveTool={onChangeActiveTool}
           />
           <div
-            className="flex-1 h-[calc(100%-124px)] bg-muted relative"
+            className="flex-1 bg-muted relative flex items-center justify-center overflow-hidden p-0 m-0"
             ref={(node) => {
               containerRef.current = node;
               setContainer(node);
@@ -212,7 +220,10 @@ export const Editor = ({ initialData }: EditorProps) => {
             <div className="absolute right-0 top-0 z-50 p-2">
               <LayersPanel />
             </div>
-            <canvas ref={canvasRef}/>
+            <canvas
+              ref={canvasRef}
+              className="object-contain p-0 m-0"
+            />
           </div>
           <Footer editor={editor} />
         </main>

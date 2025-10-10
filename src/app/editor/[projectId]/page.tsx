@@ -37,7 +37,9 @@ const EditorProjectIdPage = ({ params }: EditorProjectIdPageProps) => {
     );
   }
 
-  return <Editor initialData={data} />;
+  return (
+    <Editor initialData={data} />
+  );
 };
 
 export default EditorProjectIdPage;

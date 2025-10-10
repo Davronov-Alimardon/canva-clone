@@ -102,7 +102,6 @@ export const useLayersStore = create<LayersState>((set, get) => ({
                   // Check if object already exists on canvas
                   const existingObj = canvas.getObjects().find(o => (o as any).objectId === objectData.objectId);
                   if (!existingObj) {
-                    console.log(`🔄 ADD_LAYER (redo): Restoring object ${objectData.objectId} to newly created layer`);
                     await get().restoreObjectToCanvas(objectData, layerData.layer.id);
                   }
                 }
@@ -155,13 +154,9 @@ export const useLayersStore = create<LayersState>((set, get) => ({
           // Check if object already exists before restoring to prevent duplicates
           const existingObj = canvas.getObjects().find(o => (o as any).objectId === objData.objectId);
           if (!existingObj) {
-            console.log(`🔄 ADD_OBJECT (forward): Restoring object ${objData.objectId} to layer ${objData.layerId}`);
-
             // Check if target layer exists in store before restoration
             const targetLayer = get().layers.find(l => l.id === objData.layerId);
             if (!targetLayer) {
-              console.warn(`🔄 ADD_OBJECT (forward): Target layer ${objData.layerId} not found in store! Skipping object restoration.`);
-              console.log(`🔄 Available layers:`, get().layers.map(l => ({ id: l.id, name: l.name, type: l.type })));
               // Skip restoration - the object will be restored when the layer is created
             } else {
               await get().restoreObjectToCanvas(objData.objectData, objData.layerId);
@@ -169,28 +164,20 @@ export const useLayersStore = create<LayersState>((set, get) => ({
               get().syncLayerObjectsFromCanvas(objData.layerId);
             }
           } else {
-            console.log(`🔄 ADD_OBJECT (forward): Object ${objData.objectId} already exists, skipping restore`);
           }
         } else if (canvas) {
-          console.log(`🔄 ADD_OBJECT (backward/undo): Removing object ${objData.objectId} from canvas`);
           const objects = canvas.getObjects();
-          console.log(`🔄 Canvas has ${objects.length} total objects`);
 
           // Find ALL objects with the same objectId (in case there are duplicates)
           const objectsToRemove = objects.filter(o => (o as any).objectId === objData.objectId);
 
           if (objectsToRemove.length > 0) {
-            console.log(`🔄 Found ${objectsToRemove.length} objects to remove with ID ${objData.objectId}`);
             objectsToRemove.forEach(obj => {
-              console.log(`🔄 Removing ${obj.type} at (${obj.left}, ${obj.top})`);
               canvas.remove(obj);
             });
             canvas.renderAll();
-            console.log(`🔄 Successfully removed ${objectsToRemove.length} objects from canvas`);
             // SYNC: Update layer objects array after canvas change
             get().syncLayerObjectsFromCanvas(objData.layerId);
-          } else {
-            console.warn(`🔄 UNDO FAILED: Could not find object with ID ${objData.objectId} on canvas!`);
           }
         }
         break;
@@ -268,8 +255,6 @@ export const useLayersStore = create<LayersState>((set, get) => ({
     const { canvas } = get();
     if (!canvas) return;
 
-    console.log(`🗑️ CLEANUP: Removing all canvas objects for layer ${layerId}`);
-
     const objects = canvas.getObjects();
     const objectsToRemove = objects.filter(obj => {
       const layerAwareObj = obj as FabricObjectWithLayer;
@@ -277,13 +262,11 @@ export const useLayersStore = create<LayersState>((set, get) => ({
     });
 
     objectsToRemove.forEach(obj => {
-      console.log(`🗑️ CLEANUP: Removing ${obj.type} object from canvas`);
       canvas.remove(obj);
     });
 
     if (objectsToRemove.length > 0) {
       canvas.renderAll();
-      console.log(`🗑️ CLEANUP: Removed ${objectsToRemove.length} objects from layer ${layerId}`);
     }
   },
 
@@ -291,12 +274,9 @@ export const useLayersStore = create<LayersState>((set, get) => ({
     const { canvas } = get();
     if (!canvas) return;
 
-    console.log(`🔄 RESTORE_OBJECT: Restoring ${objectData.type} to layer ${layerId}`);
-
     try {
       // Ensure objectData has required properties
       if (!objectData || !objectData.type) {
-        console.warn('🔄 RESTORE_OBJECT: Invalid object data', objectData);
         return;
       }
 
@@ -310,14 +290,12 @@ export const useLayersStore = create<LayersState>((set, get) => ({
         (fabric.util.enlivenObjects as any)([objectData], (enlivenedObjects: fabric.Object[]) => {
           try {
             if (!enlivenedObjects || !Array.isArray(enlivenedObjects) || enlivenedObjects.length === 0) {
-              console.warn('🔄 RESTORE_OBJECT: No objects returned from enlivenObjects');
               resolve();
               return;
             }
 
             const obj = enlivenedObjects[0];
             if (!obj) {
-              console.warn('🔄 RESTORE_OBJECT: Enlivened object is null');
               resolve();
               return;
             }
@@ -330,17 +308,13 @@ export const useLayersStore = create<LayersState>((set, get) => ({
             // Add to canvas
             canvas.add(obj);
 
-            console.log(`🔄 RESTORE_OBJECT: Successfully restored ${obj.type} (${objectData.objectId})`);
             resolve();
           } catch (error) {
-            console.error('🔄 RESTORE_OBJECT: Error in enlivenObjects callback:', error);
             reject(error);
           }
         });
       });
     } catch (error) {
-      console.error('🔄 RESTORE_OBJECT: Failed to restore object:', error);
-      console.error('🔄 RESTORE_OBJECT: Object data was:', objectData);
     }
   },
 
@@ -348,18 +322,10 @@ export const useLayersStore = create<LayersState>((set, get) => ({
     const { operationHistory } = get();
 
     if (operationHistory.operations.length === 0) {
-      console.log('🔄 UNDO: No operations to undo (back to last save)');
       return;
     }
 
     const operation = operationHistory.operations[operationHistory.operations.length - 1];
-    console.log(`🔄 UNDO: Starting undo of operation`, {
-      id: operation.id,
-      type: operation.type,
-      timestamp: new Date(operation.timestamp).toLocaleTimeString(),
-      forward: operation.forward,
-      backward: operation.backward
-    });
 
     const newOperations = operationHistory.operations.slice(0, -1);
     const newFuture = [operation, ...operationHistory.future];
@@ -372,29 +338,20 @@ export const useLayersStore = create<LayersState>((set, get) => ({
       isUndoRedoInProgress: true
     });
 
-    console.log(`🔄 UNDO: Operation history updated - ${newOperations.length} operations remaining, ${newFuture.length} in future`);
-
     // Apply the backward operation
     await get().applyOperation(operation, 'backward');
 
     set({ isUndoRedoInProgress: false });
-    console.log(`🔄 UNDO: Operation undo completed`);
   },
 
   redoOperation: async () => {
     const { operationHistory } = get();
-    console.log(`🔄 REDO: Starting redo. Future operations:`, operationHistory.future.length);
-    operationHistory.future.forEach((op, index) => {
-      console.log(`🔄 REDO: Future[${index}]: ${op.type} - layerId: ${op.forward.layerId || 'N/A'}`);
-    });
 
     if (operationHistory.future.length === 0) {
-      console.log(`🔄 REDO: No operations to redo`);
       return;
     }
 
     const operation = operationHistory.future[0];
-    console.log(`🔄 REDO: Processing operation: ${operation.type}`);
     const newOperations = [...operationHistory.operations, operation];
     const newFuture = operationHistory.future.slice(1);
 
@@ -405,13 +362,11 @@ export const useLayersStore = create<LayersState>((set, get) => ({
       },
       isUndoRedoInProgress: true
     });
-    console.log(`🔄 REDO: Operation history updated - ${newOperations.length} operations, ${newFuture.length} in future`);
 
     // Apply the forward operation
     await get().applyOperation(operation, 'forward');
 
     set({ isUndoRedoInProgress: false });
-    console.log(`🔄 REDO: Operation redo completed`);
   },
 
   canUndo: () => get().operationHistory.operations.length > 0,
@@ -428,7 +383,6 @@ export const useLayersStore = create<LayersState>((set, get) => ({
   },
 
   clearOperationHistory: () => {
-    console.log('🧹 CLEAR: Clearing operation history (save point created)');
     set({
       operationHistory: { operations: [], future: [] }
     });
@@ -438,8 +392,6 @@ export const useLayersStore = create<LayersState>((set, get) => ({
     const { canvas } = get();
     if (!canvas) return;
 
-    console.log(`🔄 SYNC: Syncing layer ${layerId} objects from canvas`);
-
     // Get all objects belonging to this layer from canvas
     const layerObjects = canvas.getObjects()
       .filter(obj => {
@@ -448,57 +400,18 @@ export const useLayersStore = create<LayersState>((set, get) => ({
       })
       .map(obj => obj.toObject(JSON_KEYS));
 
-    console.log(`🔄 SYNC: Found ${layerObjects.length} objects for layer ${layerId}`);
 
-    // NEW: Direct fabric objects approach (like delete function)
-    const allLayerObjects = canvas.getObjects().filter(obj =>
-      obj.name !== "clip" &&
-      (obj as FabricObjectWithLayer).layerId === layerId
-    );
-
-    console.log(`🔄 COMPARISON: Serialized approach found ${layerObjects.length} objects`);
-    console.log(`🔄 COMPARISON: Direct approach found ${allLayerObjects.length} objects`);
-
-    // DEBUG: Check layer info and auto-cleanup conditions
-    console.log(`🔄 SYNC: Looking for layerId: ${layerId}`);
     const layer = get().layers.find(l => l.id === layerId);
-    console.log(`🔄 SYNC: Layer found:`, layer ? 'YES' : 'NO');
-
-    const allLayers = get().layers;
-    console.log(`🔄 SYNC: All layers in store:`, allLayers.map(l => ({ id: l.id, name: l.name, type: l.type })));
 
     if (layer) {
-      console.log(`🔄 SYNC: Layer details - ID: ${layer.id}`);
-      console.log(`🔄 SYNC: Layer details - Name: ${layer.name}`);
-      console.log(`🔄 SYNC: Layer details - Type: "${layer.type}"`);
-      console.log(`🔄 SYNC: LayerType.Sectional: "${LayerType.Sectional}"`);
-      console.log(`🔄 SYNC: Is sectional?: ${layer.type === LayerType.Sectional}`);
-
       if (layer.type === LayerType.Sectional) {
         const inpaintingObjectsSerialized = layerObjects.filter(obj => obj.type === 'path');
-        const inpaintingObjectsDirect = allLayerObjects.filter(obj => obj.type === 'path');
-
-        console.log(`🔄 COMPARISON: Serialized inpainting objects: ${inpaintingObjectsSerialized.length}`);
-        console.log(`🔄 COMPARISON: Direct inpainting objects: ${inpaintingObjectsDirect.length}`);
-        console.log(`🔄 SYNC: Sectional layer analysis`, {
-          totalObjectsSerialized: layerObjects.length,
-          totalObjectsDirect: allLayerObjects.length,
-          inpaintingObjectsSerialized: inpaintingObjectsSerialized.length,
-          inpaintingObjectsDirect: inpaintingObjectsDirect.length,
-          objectTypesSerialized: layerObjects.map(obj => obj.type),
-          objectTypesDirect: allLayerObjects.map(obj => obj.type),
-          shouldRemoveSerialized: inpaintingObjectsSerialized.length === 0,
-          shouldRemoveDirect: inpaintingObjectsDirect.length === 0
-        });
 
         if (inpaintingObjectsSerialized.length === 0) {
-          console.log(`🧹 AUTO-CLEANUP: Removing empty sectional layer "${layer.name}" (${layerId})`);
           get().deleteLayer(layerId);
           return;
         }
       }
-    } else {
-      console.warn(`🔄 SYNC: Could not find layer with ID ${layerId}`);
     }
 
     // Update the layer's objects array to match canvas reality
@@ -533,7 +446,6 @@ export const useLayersStore = create<LayersState>((set, get) => ({
         hasBorders: isActiveSectionalObject, 
         hoverCursor: isActiveSectionalObject ? 'crosshair' : 'default'
       });
-      console.log('🔧 Object interaction:', obj.type, 'selectable:', isActiveSectionalObject);
     } else {
       // Normal mode: restore all object interaction based on active layer
       const activeGlobalLayerId = get().activeGlobalLayerId;
@@ -554,7 +466,6 @@ export const useLayersStore = create<LayersState>((set, get) => ({
 
   // Ensure canvas selection is properly restored when disabling brush mode
   if (!enabled) {
-    console.log('🔧 Restoring canvas selection for UI interactions');
     canvas.selection = true;
 
     // Force cursor reset to default when exiting brush mode
@@ -603,11 +514,10 @@ export const useLayersStore = create<LayersState>((set, get) => ({
   },
 
   // ========== Sectional Layer Management ==========
-  addSectionalLayer: async (parentGlobalId: string, name = `Section ${Date.now()}`) => {
+  addSectionalLayer: async (parentGlobalId: string) => {
     // Verify parent exists and is global
     const parentLayer = get().layers.find(l => l.id === parentGlobalId && l.type === LayerType.Global);
     if (!parentLayer) {
-      console.warn('Cannot add sectional layer: parent global layer not found');
       return null;
     }
 
@@ -684,12 +594,9 @@ export const useLayersStore = create<LayersState>((set, get) => ({
   },
 
   setActiveGlobalLayer: (id: string) => {
-    console.log(`🎯 SET_ACTIVE: Setting active global layer to: ${id}`);
-
     const { canvas, layers } = get();
 
     if (!canvas) {
-      console.log(`🎯 SET_ACTIVE: No canvas available`);
       return;
     }
 
@@ -704,11 +611,8 @@ export const useLayersStore = create<LayersState>((set, get) => ({
     );
 
     if (!newActiveLayer) {
-      console.log(`🎯 SET_ACTIVE: Layer ${id} not found in global layers`);
       return;
     }
-
-    console.log(`🎯 SET_ACTIVE: Found layer: ${newActiveLayer.name} (${newActiveLayer.id})`);
 
     // Update layer active states
     const updatedLayers: Layer[] = layers.map((layer: Layer): Layer => ({
@@ -725,9 +629,8 @@ export const useLayersStore = create<LayersState>((set, get) => ({
     // Update visibility
     if (canvas) {
       const allObjects: fabric.Object[] = canvas.getObjects();
-      console.log(`🎯 SET_ACTIVE: Processing ${allObjects.length} objects for layer visibility`);
 
-      allObjects.forEach((obj: fabric.Object, i) => {
+      allObjects.forEach((obj: fabric.Object) => {
         const layerAwareObj = obj as FabricObjectWithLayer;
         const isWorkspace = obj.name === "clip";
         const objectLayerId = layerAwareObj.layerId;
@@ -735,7 +638,6 @@ export const useLayersStore = create<LayersState>((set, get) => ({
         if (isWorkspace) {
           obj.set({ selectable: false, evented: false });
           canvas.sendToBack(obj);
-          console.log(`🎯 SET_ACTIVE: ${i}: workspace object (kept non-selectable)`);
         } else if (objectLayerId) {
           // Show objects from active layer, hide others
           const isFromActiveLayer = objectLayerId === id;
@@ -744,18 +646,12 @@ export const useLayersStore = create<LayersState>((set, get) => ({
             evented: isFromActiveLayer,
             visible: true
           });
-          console.log(`🎯 SET_ACTIVE: ${i}: ${obj.type} (layerId: ${objectLayerId}, active: ${isFromActiveLayer}, visible: true, selectable: ${isFromActiveLayer})`);
-        } else {
-          console.log(`🎯 SET_ACTIVE: ${i}: ${obj.type} (NO layerId - orphaned object!)`);
         }
       });
 
       canvas.discardActiveObject();
       canvas.renderAll();
-      console.log(`🎯 SET_ACTIVE: Canvas rendered with new layer visibility`);
     }
-
-    console.log(`🎯 SET_ACTIVE: Active layer change completed`);
   },
 
   // ========== Delete Method ==========
@@ -909,21 +805,17 @@ deleteLayer: (id: string) => {
     const targetLayerId = activeSectionalLayerId || activeGlobalLayerId;
     layerAwareObj.layerId = targetLayerId || undefined;
     
-    console.log('🏷️ Tagged object details:', {
-      targetLayerId,
-      activeGlobalLayerId,
-      activeSectionalLayerId,
-      objectType: obj.type,
-      objectLeft: obj.left,
-      objectTop: obj.top
-    });
   },
 
   addMultipleImageLayers: async (files: File[]) => {
     const layerIds: string[] = [];
-    
+
+    // Start batch operation to group all uploads
+    const batchId = get().startBatch(`Upload ${files.length} images`);
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
+
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
@@ -948,48 +840,99 @@ deleteLayer: (id: string) => {
         children: []
       };
 
-      // Add layer to store
-      set((state) => ({
-        layers: [...state.layers, newLayer]
-      }));
+      // Create ADD_LAYER operation
+      const addLayerOperation = get().createOperation(
+        'ADD_LAYER',
+        { layer: newLayer } as AddLayerData,
+        { layerId: newLayer.id } as RemoveLayerData,
+        batchId
+      );
 
-      // Add image to canvas
+      await get().executeOperation(addLayerOperation);
+
+      // Add image to canvas with operation tracking
       const canvas = get().canvas;
       if (canvas?.getContext()) {
-        fabric.Image.fromURL(dataUrl, (img) => {
-          if (canvas?.getContext()) {
-            // Tag the object with the correct layer ID (the new layer's ID)
-            const layerAwareImg = img as FabricObjectWithLayer;
-            layerAwareImg.layerId = id;
-            
-            img.set({ 
-              left: 100 + (i * 20),
-              top: 100 + (i * 20), 
-               selectable: true,
-               evented: true,
-               visible: true,
-               hasControls: true,     
-               hasBorders: true,     
-               cornerColor: '#FFF',
-               borderColor: '#3b82f6',
-               cornerSize: 8,
-               transparentCorners: false
-            });
-            
-            canvas.add(img);
-            canvas.bringToFront(img);
-            canvas.renderAll();
-          }
+        await new Promise<void>((resolve) => {
+          fabric.Image.fromURL(dataUrl, async (img) => {
+            if (canvas?.getContext()) {
+              // Tag the object with the correct layer ID
+              const layerAwareImg = img as FabricObjectWithLayer;
+              layerAwareImg.layerId = id;
+
+              // Add unique object ID for operation tracking
+              (img as any).objectId = uuidv4();
+
+              img.set({
+                left: 100 + (i * 20),
+                top: 100 + (i * 20),
+                selectable: true,
+                evented: true,
+                visible: true,
+                hasControls: true,
+                hasBorders: true,
+                cornerColor: '#FFF',
+                borderColor: '#3b82f6',
+                cornerSize: 8,
+                transparentCorners: false
+              });
+
+              canvas.add(img);
+              canvas.bringToFront(img);
+              canvas.renderAll();
+
+              // Create ADD_OBJECT operation
+              const objectData = img.toObject(JSON_KEYS);
+              objectData.objectId = (img as any).objectId;
+              objectData.layerId = id;
+
+              const addObjectOperation = get().createOperation(
+                'ADD_OBJECT',
+                {
+                  layerId: id,
+                  objectData,
+                  objectId: objectData.objectId
+                } as AddObjectData,
+                {
+                  layerId: id,
+                  objectId: objectData.objectId,
+                  objectData
+                } as RemoveObjectData,
+                batchId
+              );
+
+              await get().executeOperation(addObjectOperation);
+
+              resolve();
+            }
+          });
         });
       }
     }
 
-    // Activate only the last layer 
+    // End batch operation
+    get().endBatch();
+
+    // Activate only the last layer
     if (layerIds.length > 0) {
-      // Small delay to ensure all images are loaded
+      // Small delay to ensure all operations are complete
       setTimeout(() => {
-        get().setActiveGlobalLayer(layerIds[layerIds.length - 1]);
-      }, 100);
+        const setActiveOperation = get().createOperation(
+          'SET_ACTIVE_LAYER',
+          {
+            newLayerId: layerIds[layerIds.length - 1],
+            layerType: 'global',
+            previousLayerId: get().activeGlobalLayerId
+          } as SetActiveLayerData,
+          {
+            newLayerId: get().activeGlobalLayerId || '',
+            layerType: 'global',
+            previousLayerId: layerIds[layerIds.length - 1]
+          } as SetActiveLayerData
+        );
+
+        get().executeOperation(setActiveOperation);
+      }, 200);
     }
   },
 
@@ -1023,11 +966,6 @@ deleteLayer: (id: string) => {
   },
 
   updateLayer: (id, updates, addToHistory = true) => {
-    console.log('💾 updateLayer called:', { 
-    layerId: id, 
-    hasObjects: updates.objects?.length,
-    objectTypes: updates.objects?.map((o: any) => o.type)
-  });
   
     set((state) => {
       const existingLayer = state.layers.find((l) => l.id === id);
@@ -1121,7 +1059,7 @@ deleteLayer: (id: string) => {
 
   // Layer ordering methods
   bringForward: () => {
-    const { activeGlobalLayerId, layers, canvas } = get();
+    const { activeGlobalLayerId, layers } = get();
     const index = layers.findIndex((l) => l.id === activeGlobalLayerId);
     if (index === -1 || index >= layers.length - 1) return;
 
@@ -1217,7 +1155,6 @@ deleteLayer: (id: string) => {
   addOperationToTransaction: (operation: CanvasOperation) => {
     const { currentTransaction } = get();
     if (!currentTransaction) {
-      console.warn('No active transaction to add operation to');
       return;
     }
 
@@ -1228,7 +1165,6 @@ deleteLayer: (id: string) => {
   commitTransaction: async () => {
     const { currentTransaction } = get();
     if (!currentTransaction) {
-      console.warn('No active transaction to commit');
       return;
     }
 
@@ -1242,11 +1178,37 @@ deleteLayer: (id: string) => {
   rollbackTransaction: async () => {
     const { currentTransaction } = get();
     if (!currentTransaction) {
-      console.warn('No active transaction to rollback');
       return;
     }
 
     // Simply clear the current transaction without executing
     set({ currentTransaction: null });
+  },
+
+  // Restore from snapshot
+  restoreFromSnapshot: (
+    layers: Layer[],
+    canvasConfig: { width: number; height: number; backgroundColor: string }
+  ) => {
+    // Set the first global layer as active
+    const firstGlobalLayer = layers.find(l => l.type === LayerType.Global);
+    const activeGlobalLayerId = firstGlobalLayer?.id || null;
+
+    set({
+      layers,
+      activeGlobalLayerId,
+      activeSectionalLayerId: null,
+      // Clear history and operations as this is a fresh start
+      history: {},
+      operationHistory: { operations: [], future: [] }
+    });
+
+    // Update canvas background if canvas is available
+    const { canvas } = get();
+    if (canvas) {
+      canvas.setBackgroundColor(canvasConfig.backgroundColor, () => {
+        canvas.renderAll();
+      });
+    }
   },
 }));

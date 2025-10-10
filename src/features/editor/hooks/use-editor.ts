@@ -1,5 +1,5 @@
 // use-editor hook - simplified version
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useState, useMemo, useCallback, useRef} from "react";
 import { useHotkeys } from "./use-hotkeys";
 import { useClipboard } from "./use-clipboard";
 import { useCanvasEvents } from "./use-canvas-events";
