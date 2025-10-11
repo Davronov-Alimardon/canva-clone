@@ -44,7 +44,7 @@ export const ImageSidebar = ({
       console.error("Error uploading images:", error);
     } finally {
       setIsUploading(false);
-      setSelectedFiles([]); 
+      setSelectedFiles([]);
 
       const fileInput =
         document.querySelector<HTMLInputElement>('input[type="file"]');
@@ -63,7 +63,7 @@ export const ImageSidebar = ({
     >
       <ToolSidebarHeader
         title="Upload Images"
-        description="Upload one or more images — each will automatically create a new layer."
+        description="Upload one or more images."
       />
 
       <ScrollArea className="flex-1">

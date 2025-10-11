@@ -1,4 +1,3 @@
-// editor.tsx - with AI sidebar
 "use client";
 
 import { fabric } from "fabric";
@@ -38,7 +37,7 @@ export const Editor = ({ initialData }: EditorProps) => {
     console.log("Clear selection placeholder");
   });
 
-  // === Editor setup ===
+  // Editor setup
   const { init, editor, setContainer } = useEditor({
     defaultState: initialData.json,
     defaultWidth: initialData.width,
@@ -71,14 +70,14 @@ export const Editor = ({ initialData }: EditorProps) => {
         }, 100);
       }
     },
-    [activeTool, setActiveTool]
+    [setActiveTool]
   );
 
-  // === Refs ===
+  // Refs
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // === Initialize canvas ===
+  // Initialize canvas
   useEffect(() => {
     if (!canvasRef.current || !containerRef.current) return;
 
@@ -151,7 +150,7 @@ export const Editor = ({ initialData }: EditorProps) => {
     }
   }, [editor]);
 
-  // === Layout ===
+  // Layout
   return (
     <div className="w-full h-full flex flex-col">
       <Navbar
