@@ -6,7 +6,10 @@ interface UseCanvasPanZoomProps {
   activeTool?: string;
 }
 
-export const useCanvasPanZoom = ({ canvas, activeTool }: UseCanvasPanZoomProps): void => {
+export const useCanvasPanZoom = ({
+  canvas,
+  activeTool,
+}: UseCanvasPanZoomProps): void => {
   useEffect(() => {
     if (!canvas) return;
 

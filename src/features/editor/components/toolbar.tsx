@@ -214,7 +214,7 @@ export const Toolbar = ({
               variant="ghost"
               className={cn(
                 "w-auto px-2 text-sm",
-                activeTool === "font" && "bg-gray-100",
+                activeTool === "font" && "bg-gray-100"
               )}
             >
               <div className="max-w-[100px] truncate">

@@ -5,7 +5,6 @@ import { fabric } from "fabric";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ResponseType } from "@/features/projects/api/use-get-project";
-import { useUpdateProject } from "@/features/projects/api/use-update-project";
 
 import { ActiveTool, selectionDependentTools } from "@/features/editor/types";
 import { Navbar } from "@/features/editor/components/navbar";
@@ -36,7 +35,7 @@ export const Editor = ({ initialData }: EditorProps) => {
   const [isCanvasInitialized, setIsCanvasInitialized] = useState(false);
 
   const clearSelectionRef = useRef<() => void>(() => {
-    console.log('Clear selection placeholder');
+    console.log("Clear selection placeholder");
   });
 
   // === Editor setup ===
@@ -45,8 +44,8 @@ export const Editor = ({ initialData }: EditorProps) => {
     defaultWidth: initialData.width,
     defaultHeight: initialData.height,
     clearSelectionCallback: () => clearSelectionRef.current(),
-    activeTool: activeTool, 
-    onChangeActiveTool: setActiveTool 
+    activeTool: activeTool,
+    onChangeActiveTool: setActiveTool,
   });
 
   useEffect(() => {
@@ -57,40 +56,23 @@ export const Editor = ({ initialData }: EditorProps) => {
     };
   }, [activeTool, setActiveTool]);
 
-  const onChangeActiveTool = useCallback((tool: ActiveTool) => {
-  console.log('🛠️ Tool changing to:', tool);
+  const onChangeActiveTool = useCallback(
+    (tool: ActiveTool) => {
+      setActiveTool(tool);
 
-   if (tool === activeTool && tool !== "select") {
-    console.log('⏭️ Tool already active, skipping');
-    return;
-  }
-
-  setActiveTool(tool);
-  
-  // If switching to brush, ensure we're not in a state that would conflict
-  if (tool === "brush") {
-    console.log('🎯 Brush tool activated - ensuring proper state');
-    
-    // Small delay to ensure state is updated before any canvas operations
-    setTimeout(() => {
-      if (editorRef.current?.canvas) {
-        console.log('🔧 Setting canvas for brush tool');
-        editorRef.current.canvas.defaultCursor = 'crosshair';
-        editorRef.current.canvas.selection = false;
-        editorRef.current.canvas.renderAll();
-
+      if (tool === "brush") {
+        // Small delay to ensure state is updated before any canvas operations
         setTimeout(() => {
           if (editorRef.current?.canvas) {
-            editorRef.current.canvas.defaultCursor = 'crosshair';
+            editorRef.current.canvas.defaultCursor = "crosshair";
+            editorRef.current.canvas.selection = false;
             editorRef.current.canvas.renderAll();
-            console.log('✅ Crosshair cursor confirmed');
           }
-        }, 50);
+        }, 100);
       }
-    }, 150);
-    
-  }
-}, [activeTool,setActiveTool]);
+    },
+    [activeTool, setActiveTool]
+  );
 
   // === Refs ===
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -115,32 +97,29 @@ export const Editor = ({ initialData }: EditorProps) => {
         initialContainer: containerRef.current,
       });
 
-      // Initialize canvas without setting zoom (autoZoom will handle it)
       const initializeCanvas = () => {
         if (canvas?.getContext()) {
           try {
             canvas.renderAll();
             setIsCanvasInitialized(true);
           } catch (error) {
-            console.warn('Canvas initialization failed:', error);
+            console.warn("Canvas initialization failed:", error);
           }
         }
       };
 
-      // Use requestAnimationFrame for better timing
       requestAnimationFrame(() => {
         initializeCanvas();
 
-        // Auto-zoom canvas to fit container after initialization
+        // Small delay to ensure container dimensions are settled
         setTimeout(() => {
           if (editorRef.current?.autoZoom) {
             editorRef.current.autoZoom();
           }
         }, 100);
       });
-
     } catch (error) {
-      console.error('Failed to initialize canvas:', error);
+      console.error("Failed to initialize canvas:", error);
     }
 
     return () => {
@@ -150,19 +129,18 @@ export const Editor = ({ initialData }: EditorProps) => {
     };
   }, [init]);
 
-  // === Window resize handler for canvas centering ===
+  // Window resize handler for canvas centering
   useEffect(() => {
     if (!isCanvasInitialized || !editor?.canvas) return;
 
     const handleResize = () => {
-      // Canvas is now centered via CSS, but we may need to trigger re-render
       if (editor?.canvas) {
         editor.canvas.renderAll();
       }
     };
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, [isCanvasInitialized, editor?.canvas]);
 
   const editorRef = useRef(editor);
@@ -184,23 +162,62 @@ export const Editor = ({ initialData }: EditorProps) => {
       />
       <div className="w-full h-full flex">
         {/* Main Sidebar */}
-        <Sidebar activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
+        <Sidebar
+          activeTool={activeTool}
+          onChangeActiveTool={onChangeActiveTool}
+        />
 
         {/* Tool Sidebars - Absolute Positioned */}
-        <StrokeColorSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
-        <StrokeWidthSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
-        <OpacitySidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
-        <TextSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
-        <FontSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
-        <ImageSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
-        <FilterSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
+        <StrokeColorSidebar
+          editor={editor}
+          activeTool={activeTool}
+          onChangeActiveTool={onChangeActiveTool}
+        />
+        <StrokeWidthSidebar
+          editor={editor}
+          activeTool={activeTool}
+          onChangeActiveTool={onChangeActiveTool}
+        />
+        <OpacitySidebar
+          editor={editor}
+          activeTool={activeTool}
+          onChangeActiveTool={onChangeActiveTool}
+        />
+        <TextSidebar
+          editor={editor}
+          activeTool={activeTool}
+          onChangeActiveTool={onChangeActiveTool}
+        />
+        <FontSidebar
+          editor={editor}
+          activeTool={activeTool}
+          onChangeActiveTool={onChangeActiveTool}
+        />
+        <ImageSidebar
+          editor={editor}
+          activeTool={activeTool}
+          onChangeActiveTool={onChangeActiveTool}
+        />
+        <FilterSidebar
+          editor={editor}
+          activeTool={activeTool}
+          onChangeActiveTool={onChangeActiveTool}
+        />
         <AiSidebar
           editor={editor}
           activeTool={activeTool}
           onChangeActiveTool={onChangeActiveTool}
         />
-        <DrawSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
-        <SettingsSidebar editor={editor} activeTool={activeTool} onChangeActiveTool={onChangeActiveTool} />
+        <DrawSidebar
+          editor={editor}
+          activeTool={activeTool}
+          onChangeActiveTool={onChangeActiveTool}
+        />
+        <SettingsSidebar
+          editor={editor}
+          activeTool={activeTool}
+          onChangeActiveTool={onChangeActiveTool}
+        />
 
         {/* Main Workspace - Full Width */}
         <main className="flex-1 h-full bg-muted overflow-hidden flex flex-col relative">
@@ -220,10 +237,7 @@ export const Editor = ({ initialData }: EditorProps) => {
             <div className="absolute right-0 top-0 z-50 p-2">
               <LayersPanel />
             </div>
-            <canvas
-              ref={canvasRef}
-              className="object-contain p-0 m-0"
-            />
+            <canvas ref={canvasRef} className="object-contain p-0 m-0" />
           </div>
           <Footer editor={editor} />
         </main>

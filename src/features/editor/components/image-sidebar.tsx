@@ -33,7 +33,7 @@ export const ImageSidebar = ({
 
   const handleFiles = async (files: FileList | null) => {
     if (!files) return;
-    
+
     const fileArray = Array.from(files);
     setSelectedFiles(fileArray);
     setIsUploading(true);
@@ -44,12 +44,13 @@ export const ImageSidebar = ({
       console.error("Error uploading images:", error);
     } finally {
       setIsUploading(false);
-      setSelectedFiles([]); // Clear selection after upload
+      setSelectedFiles([]); 
 
-       const fileInput = document.querySelector<HTMLInputElement>('input[type="file"]');
-  if (fileInput) {
-    fileInput.value = '';
-  }
+      const fileInput =
+        document.querySelector<HTMLInputElement>('input[type="file"]');
+      if (fileInput) {
+        fileInput.value = "";
+      }
     }
   };
 
@@ -77,11 +78,14 @@ export const ImageSidebar = ({
               className="hidden"
             />
             <p className="text-sm text-gray-600">
-              {isUploading ? "Uploading..." : "Click or drag multiple images here"}
+              {isUploading
+                ? "Uploading..."
+                : "Click or drag multiple images here"}
             </p>
             {selectedFiles.length > 0 && (
               <p className="text-xs text-gray-500 mt-2">
-                {selectedFiles.length} image{selectedFiles.length > 1 ? 's' : ''} selected
+                {selectedFiles.length} image
+                {selectedFiles.length > 1 ? "s" : ""} selected
               </p>
             )}
           </label>
@@ -90,7 +94,9 @@ export const ImageSidebar = ({
             type="button"
             disabled={isUploading}
             onClick={() =>
-              document.querySelector<HTMLInputElement>('input[type="file"]')?.click()
+              document
+                .querySelector<HTMLInputElement>('input[type="file"]')
+                ?.click()
             }
             className="w-full"
           >

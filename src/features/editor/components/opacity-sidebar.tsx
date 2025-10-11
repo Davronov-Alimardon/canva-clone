@@ -22,7 +22,7 @@ export const OpacitySidebar = ({
   const initialValue = editor?.getActiveOpacity() || 1;
   const selectedObject = useMemo(
     () => editor?.selectedObjects[0],
-    [editor?.selectedObjects],
+    [editor?.selectedObjects]
   );
 
   const [opacity, setOpacity] = useState(initialValue);
@@ -46,7 +46,7 @@ export const OpacitySidebar = ({
     <aside
       className={cn(
         "bg-white relative border-r z-[40] w-[360px] h-full flex flex-col",
-        activeTool === "opacity" ? "visible" : "hidden",
+        activeTool === "opacity" ? "visible" : "hidden"
       )}
     >
       <ToolSidebarHeader

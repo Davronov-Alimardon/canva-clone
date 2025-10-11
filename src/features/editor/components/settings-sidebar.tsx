@@ -28,7 +28,7 @@ export const SettingsSidebar = ({
   const initialHeight = useMemo(() => `${workspace?.height ?? 0}`, [workspace]);
   const initialBackground = useMemo(
     () => workspace?.fill ?? "#ffffff",
-    [workspace],
+    [workspace]
   );
 
   const [width, setWidth] = useState(initialWidth);
@@ -65,7 +65,7 @@ export const SettingsSidebar = ({
     <aside
       className={cn(
         "bg-white relative border-r z-[40] w-[360px] h-full flex flex-col",
-        activeTool === "settings" ? "visible" : "hidden",
+        activeTool === "settings" ? "visible" : "hidden"
       )}
     >
       <ToolSidebarHeader
@@ -98,7 +98,7 @@ export const SettingsSidebar = ({
         </form>
         <div className="p-4">
           <ColorPicker
-            value={background as string} // We dont support gradients or patterns
+            value={background as string}
             onChange={changeBackground}
           />
         </div>

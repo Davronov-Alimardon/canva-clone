@@ -1,15 +1,22 @@
 import { uuid } from "uuidv4";
 import { fabric } from "fabric";
 import type { RgbaColor } from "@uiw/react-color";
+import type { LayerObjectData, SerializedFabricObject } from "./types";
 
-export function transformText(objects: any) {
+type TextObjectData = LayerObjectData & {
+  objects?: TextObjectData[]; 
+};
+
+export function transformText(objects: TextObjectData[] | undefined) {
   if (!objects) return;
 
-  objects.forEach((item: any) => {
+  objects.forEach((item: TextObjectData) => {
     if (item.objects) {
       transformText(item.objects);
     } else {
-      item.type === "text" && item.type === "textbox";
+      if (item.type === "text") {
+        item.type = "textbox";
+      }
     }
   });
 }
@@ -141,3 +148,46 @@ export const createFilter = (value: string) => {
 
   return effect;
 };
+
+// Utility functions for fabric object layer management
+import { FabricObjectWithLayer } from "./types";
+
+export function tagFabricObjectWithLayer(
+  obj: fabric.Object,
+  layerId: string,
+  objectId?: string
+): void {
+  const layerObj = obj as FabricObjectWithLayer;
+  layerObj.layerId = layerId;
+  if (objectId) {
+    layerObj.objectId = objectId;
+  }
+}
+
+export function getLayerIdFromFabricObject(
+  obj: fabric.Object
+): string | undefined {
+  return (obj as FabricObjectWithLayer).layerId;
+}
+
+export function getObjectIdFromFabricObject(
+  obj: fabric.Object
+): string | undefined {
+  return (obj as FabricObjectWithLayer).objectId;
+}
+
+export {
+  fileToBase64,
+  resizeImage,
+  getBoundingBox,
+  getBoundingBoxFromDataUrl,
+  cropImage,
+  validateImageDataUrl,
+} from "./utils/image-utils";
+
+export {
+  getCompositeImage,
+  generateMaskFromObjects,
+  createLayerComposite,
+  validateLayersForCompositing,
+} from "./utils/canvas-compositing";

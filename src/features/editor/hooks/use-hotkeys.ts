@@ -35,28 +35,22 @@ export const useHotkeys = ({
 
     if (isInput) return;
 
-    // Exit drawing/masking mode with ESC key
     if (event.key === "Escape") {
       if (activeTool === "draw" || activeTool === "brush") {
         event.preventDefault();
-        console.log('🔄 ESC pressed - exiting drawing/masking mode');
 
-        // Perform the same cleanup as the close buttons
         if (activeTool === "brush") {
-          // Reset brush mode for mask tool
           useLayersStore.getState().setBrushMode(false);
         }
 
-        // For both tools, reset the canvas drawing mode and cursor immediately
         if (canvas) {
           canvas.isDrawingMode = false;
-          canvas.defaultCursor = 'default';
+          canvas.defaultCursor = "default";
           canvas.selection = true;
 
-          // Force cursor reset
           const canvasElement = canvas.getElement();
           if (canvasElement) {
-            canvasElement.style.cursor = 'default';
+            canvasElement.style.cursor = "default";
           }
 
           canvas.renderAll();
@@ -72,11 +66,11 @@ export const useHotkeys = ({
 
       if (selectedObjects.length > 0 && editor) {
         event.preventDefault();
-        // Use our custom delete function with inpainting/other object classification
         editor.delete();
       }
       return;
     }
+    
     // Undo
     if (isCtrlKey && event.key === "z") {
       event.preventDefault();

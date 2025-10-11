@@ -15,7 +15,7 @@ const app = new Hono().post(
       name: z.string(),
       email: z.string().email(),
       password: z.string().min(3).max(20),
-    }),
+    })
   ),
   async (c) => {
     const { name, email, password } = c.req.valid("json");
@@ -35,7 +35,7 @@ const app = new Hono().post(
     });
 
     return c.json(null, 200);
-  },
+  }
 );
 
 export default app;

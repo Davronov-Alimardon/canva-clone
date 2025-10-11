@@ -101,7 +101,7 @@ const app = new Hono()
       event = stripe.webhooks.constructEvent(
         body,
         signature,
-        process.env.STRIPE_WEBHOOK_SECRET!,
+        process.env.STRIPE_WEBHOOK_SECRET!
       );
     } catch (error) {
       return c.json({ error: "Invalid signature" }, 400);
@@ -111,7 +111,7 @@ const app = new Hono()
 
     if (event.type === "checkout.session.completed") {
       const subscription = await stripe.subscriptions.retrieve(
-        session.subscription as string,
+        session.subscription as string
       );
 
       if (!session?.metadata?.userId) {
@@ -132,7 +132,7 @@ const app = new Hono()
 
     if (event.type === "invoice.payment_succeeded") {
       const subscription = await stripe.subscriptions.retrieve(
-        session.subscription as string,
+        session.subscription as string
       );
 
       if (!session?.metadata?.userId) {

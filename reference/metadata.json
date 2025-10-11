@@ -1,5 +1,0 @@
-{
-  "name": "AI Image Layer Editor",
-  "description": "An advanced AI-powered image editor that uses a layer-based system for precise control. Generate a base image, then add sectional layers to edit specific regions using masks and prompts. Features AI-driven prompt refinement for seamless, high-quality results.",
-  "requestFramePermissions": []
-}

@@ -23,7 +23,7 @@ const app = new Hono().get("/", verifyAuth(), async (c) => {
         error: "Failed to fetch images from Unsplash",
         details: images.errors,
       },
-      400,
+      400
     );
   }
 

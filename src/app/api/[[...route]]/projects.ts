@@ -16,7 +16,7 @@ const app = new Hono()
       z.object({
         page: z.coerce.number(),
         limit: z.coerce.number(),
-      }),
+      })
     ),
     async (c) => {
       const { page, limit } = c.req.valid("query");
@@ -30,7 +30,7 @@ const app = new Hono()
         .orderBy(asc(projects.isPro), desc(projects.updatedAt));
 
       return c.json({ data });
-    },
+    }
   )
   .delete(
     "/:id",
@@ -54,7 +54,7 @@ const app = new Hono()
       }
 
       return c.json({ data: { id } });
-    },
+    }
   )
   .post(
     "/:id/duplicate",
@@ -93,7 +93,7 @@ const app = new Hono()
         .returning();
 
       return c.json({ data: duplicateData[0] });
-    },
+    }
   )
   .get(
     "/",
@@ -103,7 +103,7 @@ const app = new Hono()
       z.object({
         page: z.coerce.number(),
         limit: z.coerce.number(),
-      }),
+      })
     ),
     async (c) => {
       const auth = c.get("authUser");
@@ -125,7 +125,7 @@ const app = new Hono()
         data,
         nextPage: data.length === limit ? page + 1 : null,
       });
-    },
+    }
   )
   .patch(
     "/:id",
@@ -140,7 +140,7 @@ const app = new Hono()
           createdAt: true,
           updatedAt: true,
         })
-        .partial(),
+        .partial()
     ),
     async (c) => {
       const auth = c.get("authUser");
@@ -165,7 +165,7 @@ const app = new Hono()
       }
 
       return c.json({ data: data[0] });
-    },
+    }
   )
   .get(
     "/:id",
@@ -189,7 +189,7 @@ const app = new Hono()
       }
 
       return c.json({ data: data[0] });
-    },
+    }
   )
   .post(
     "/",
@@ -201,7 +201,7 @@ const app = new Hono()
         json: true,
         width: true,
         height: true,
-      }),
+      })
     ),
     async (c) => {
       const auth = c.get("authUser");
@@ -229,7 +229,7 @@ const app = new Hono()
       }
 
       return c.json({ data: data[0] });
-    },
+    }
   );
 
 export default app;

@@ -1,6 +1,9 @@
 // layers-panel.tsx - simplified version
 import React, { useMemo, useState, useEffect } from "react";
-import { useLayersStore, BASE_CANVAS_ID } from "@/features/editor/hooks/use-layer-store";
+import {
+  useLayersStore,
+  BASE_CANVAS_ID,
+} from "@/features/editor/hooks/use-layer-store";
 import { LayerType, Layer } from "@/features/editor/types";
 import {
   Eye,
@@ -10,7 +13,7 @@ import {
   GripVertical,
   Folder,
   Brush,
-} from "lucide-react"; 
+} from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
@@ -43,54 +46,31 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({ className }) => {
     const layerTree = getLayerTree();
     const flattenedLayers: Layer[] = [];
 
-    // Filter and process global layers
-    const baseCanvas = layerTree.find(l => l.id === BASE_CANVAS_ID);
-    const otherGlobals = layerTree.filter(l => l.id !== BASE_CANVAS_ID);
-
-    const nonEmptyGlobals = otherGlobals.filter(layer =>
-      layer.id === BASE_CANVAS_ID ||
-      layer.objects.length > 0 ||
-      layer.imageDataUrl ||
-      (layer.children && layer.children.length > 0)
-    );
+    const allGlobals = layerTree.filter((l) => l.type === LayerType.Global);
+    const visibleGlobals = allGlobals.filter((layer) => layer.isVisible);
 
     // Reverse the order so top visual layer is at top of panel
-    const reversedGlobals = [...nonEmptyGlobals].reverse();
+    const reversedGlobals = [...visibleGlobals].reverse();
 
-    // Build flattened list with hierarchy
-    reversedGlobals.forEach(globalLayer => {
+    reversedGlobals.forEach((globalLayer) => {
       flattenedLayers.push(globalLayer);
 
       // Add sectional layers as children
       if (globalLayer.children && globalLayer.children.length > 0) {
-        globalLayer.children.forEach(sectionalLayer => {
-          flattenedLayers.push({
-            ...sectionalLayer,
-            isChild: true // Add flag to identify child layers
-          });
+        globalLayer.children.forEach((sectionalLayer) => {
+          if (sectionalLayer.isVisible) {
+            flattenedLayers.push({
+              ...sectionalLayer,
+              isChild: true,
+            });
+          }
         });
       }
     });
 
-    // Add Base Canvas at bottom
-    if (baseCanvas) {
-      flattenedLayers.push(baseCanvas);
-
-      // Add its sectional layers if any
-      if (baseCanvas.children && baseCanvas.children.length > 0) {
-        baseCanvas.children.forEach(sectionalLayer => {
-          flattenedLayers.push({
-            ...sectionalLayer,
-            isChild: true
-          });
-        });
-      }
-    }
-
     return flattenedLayers;
   }, [layers, getLayerTree]);
 
-  // Select layer
   const handleSelectLayer = (layer: Layer) => {
     selectLayer(layer.id);
     if (layer.type === LayerType.Global) {
@@ -98,13 +78,15 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({ className }) => {
     }
   };
 
-  // Drag and drop
   const handleDragStart = (e: React.DragEvent<HTMLLIElement>, id: string) => {
     e.dataTransfer.effectAllowed = "move";
     setDraggedId(id);
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLLIElement>, dropTargetId: string) => {
+  const handleDrop = (
+    e: React.DragEvent<HTMLLIElement>,
+    dropTargetId: string
+  ) => {
     e.preventDefault();
     if (!draggedId || draggedId === dropTargetId) return;
 
@@ -120,24 +102,27 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({ className }) => {
     setDraggedId(null);
   };
 
-  const handleDragOver = (e: React.DragEvent<HTMLLIElement>) => e.preventDefault();
+  const handleDragOver = (e: React.DragEvent<HTMLLIElement>) =>
+    e.preventDefault();
   const handleDragEnd = () => setDraggedId(null);
 
   // Render a single layer item
   const renderLayerItem = (layer: Layer) => {
     const thumbnail = layer.imageDataUrl || layer.referenceImageUrls?.[0];
-    const isActive = layer.type === LayerType.Global
-      ? layer.id === activeGlobalLayerId
-      : layer.id === activeSectionalLayerId;
+    const isActive =
+      layer.type === LayerType.Global
+        ? layer.id === activeGlobalLayerId
+        : layer.id === activeSectionalLayerId;
     const isBaseCanvas = layer.id === BASE_CANVAS_ID;
     const isChild = layer.isChild || layer.type === LayerType.Sectional;
 
-    // Check if this global layer should have reduced opacity (when its child sectional layer is active)
-    const shouldReduceOpacity = layer.type === LayerType.Global &&
+    const shouldReduceOpacity =
+      layer.type === LayerType.Global &&
       activeSectionalLayerId &&
-      layers.find(l => l.id === activeSectionalLayerId)?.parentId === layer.id;
+      layers.find((l) => l.id === activeSectionalLayerId)?.parentId ===
+        layer.id;
 
-    return (
+    const layerElement = (
       <li
         key={layer.id}
         draggable={true}
@@ -153,44 +138,42 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({ className }) => {
             ? "bg-gray-800 text-white"
             : "bg-secondary hover:bg-gray-600/50 text-gray-400 border-transparent",
           draggedId === layer.id && "opacity-50",
-          isChild && "ml-6", // Add indentation for sectional layers
-          shouldReduceOpacity && "opacity-80", 
+          isChild && "ml-6",
+          shouldReduceOpacity && "opacity-80"
         )}
       >
         {/* Layer Type Icon */}
         {isChild ? (
-          <Brush className={cn(
-            "w-4 h-4 mr-2 flex-shrink-0",
-            isActive ? "text-white" : "text-orange-500"
-          )} />
+          <Brush
+            className={cn(
+              "w-4 h-4 mr-2 flex-shrink-0",
+              isActive ? "text-white" : "text-orange-500"
+            )}
+          />
         ) : (
-          <Folder className={cn(
-            "w-4 h-4 mr-2 flex-shrink-0",
-            isActive ? "text-white" : "text-blue-500"
-          )} />
+          <Folder
+            className={cn(
+              "w-4 h-4 mr-2 flex-shrink-0",
+              isActive ? "text-white" : "text-blue-500"
+            )}
+          />
         )}
 
         {/* Drag Handle */}
-        <GripVertical className={cn(
-          "w-4 h-4 mr-2 flex-shrink-0",
-          isActive ? "text-white" : "text-gray-500"
-        )} />
+        <GripVertical
+          className={cn(
+            "w-4 h-4 mr-2 flex-shrink-0",
+            isActive ? "text-white" : "text-gray-500"
+          )}
+        />
 
         {/* Thumbnail */}
         {thumbnail ? (
           <div className="relative w-8 h-8 rounded-sm mr-2 bg-gray-600 flex-shrink-0 overflow-hidden">
-            <Image
-              fill
-              src={thumbnail}
-              alt={layer.name}
-              className="object-cover"
-            />
+            <img src={thumbnail} alt={layer.name} className="object-cover" />
           </div>
         ) : (
-          <div className={cn(
-            "w-8 h-8 rounded-sm mr-2",
-            "bg-gray-600"
-          )} />
+          <div className={cn("w-8 h-8 rounded-sm mr-2", "bg-gray-600")} />
         )}
 
         {/* Layer Name */}
@@ -206,7 +189,9 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({ className }) => {
             }}
             className={cn(
               "transition",
-              isActive ? "text-white hover:text-gray-200" : "text-gray-400 hover:text-white"
+              isActive
+                ? "text-white hover:text-gray-200"
+                : "text-gray-400 hover:text-white"
             )}
           >
             {layer.isVisible ? (
@@ -217,7 +202,7 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({ className }) => {
           </button>
 
           {/* Delete Button removed for base canvas */}
-          {!isBaseCanvas && ( 
+          {!isBaseCanvas && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -225,7 +210,9 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({ className }) => {
               }}
               className={cn(
                 "transition",
-                isActive ? "text-white hover:text-red-300" : "text-gray-400 hover:text-red-500"
+                isActive
+                  ? "text-white hover:text-red-300"
+                  : "text-gray-400 hover:text-red-500"
               )}
             >
               <Trash2 className="w-4 h-4" />
@@ -234,11 +221,18 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({ className }) => {
         </div>
       </li>
     );
+
+    return layerElement;
   };
 
   if (isMinimized) {
     return (
-      <div className={cn("bg-white p-2 rounded-lg text-white h-full flex flex-col", className)}>
+      <div
+        className={cn(
+          "bg-white p-2 rounded-lg text-white h-full flex flex-col",
+          className
+        )}
+      >
         <div className="flex justify-between items-center">
           <h2 className="text-sm font-normal text-black">Layers</h2>
           <button
@@ -254,7 +248,12 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({ className }) => {
   }
 
   return (
-    <div className={cn("bg-white p-2 rounded-lg text-white h-full flex flex-col", className)}>
+    <div
+      className={cn(
+        "bg-white p-2 rounded-lg text-white h-full flex flex-col",
+        className
+      )}
+    >
       {/* Header */}
       <div className="flex justify-between items-center mb-2">
         <h2 className="text-sm font-normal text-black">Layers</h2>
@@ -276,7 +275,7 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({ className }) => {
             No layers yet. Add a global layer to start.
           </li>
         ) : (
-          layerList.map(layer => renderLayerItem(layer))
+          layerList.map((layer) => renderLayerItem(layer))
         )}
       </ul>
     </div>

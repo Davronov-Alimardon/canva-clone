@@ -1,5 +1,5 @@
 // use-editor hook - simplified version
-import { useState, useMemo, useCallback, useRef} from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { useHotkeys } from "./use-hotkeys";
 import { useClipboard } from "./use-clipboard";
 import { useCanvasEvents } from "./use-canvas-events";
@@ -8,19 +8,15 @@ import { buildEditor } from "./use-editor-build";
 import { EditorHookProps, ActiveTool } from "@/features/editor/types";
 import { useLayersStore } from "./use-layer-store";
 
-/**
- * Main editor logic, unified with layer store (useLayersStore).
- */
 export function useEditor({
   defaultHeight,
   defaultWidth,
   clearSelectionCallback,
   saveCallback,
-  activeTool: externalActiveTool, 
+  activeTool: externalActiveTool,
   onChangeActiveTool: externalOnChangeActiveTool,
 }: EditorHookProps) {
-
-  // --- Zustand store ---
+  // Zustand store
   const {
     canvas,
     selectedObjects,
@@ -34,37 +30,34 @@ export function useEditor({
     updateLayer,
   } = useLayersStore();
 
-  // --- Local states ---
+  // Local states
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
   const [fillColor, setFillColor] = useState("rgba(0,0,0,1)");
   const [strokeColor, setStrokeColor] = useState("rgba(0,0,0,1)");
   const [strokeWidth, setStrokeWidth] = useState(2);
   const [strokeDashArray, setStrokeDashArray] = useState<number[]>([]);
   const [fontFamily, setFontFamily] = useState("Arial");
-  
-  // Use external props only - no internal state
+
   const activeTool = externalActiveTool || "select";
   const setActiveTool = externalOnChangeActiveTool || (() => {});
 
-  // --- Initialize workspace ---
+  // Initialize workspace
   const initialWidthRef = useRef<number>(defaultWidth ?? 0);
   const initialHeightRef = useRef<number>(defaultHeight ?? 0);
 
-  const init = useEditorInit(
-    initialWidthRef,
-    initialHeightRef,
-  );
+  const init = useEditorInit(initialWidthRef, initialHeightRef);
 
   const handleSave = useCallback(() => {
     const activeGlobalLayer = getActiveGlobalLayer();
     if (!canvas || !activeGlobalLayer) return;
-    
-    // Get all objects except the workspace clip
-    const currentObjects = canvas.getObjects().filter((obj) => obj.name !== "clip");
-    
+
+    const currentObjects = canvas
+      .getObjects()
+      .filter((obj) => obj.name !== "clip");
+
     // Update the active global layer with current canvas state
     updateLayer(activeGlobalLayer.id, { objects: currentObjects });
-    
+
     // Call the project save callback
     saveCallback?.({
       json: JSON.stringify(canvas.toJSON()),
@@ -73,7 +66,7 @@ export function useEditor({
     });
   }, [canvas, getActiveGlobalLayer, updateLayer, saveCallback]);
 
-  // --- Clipboard & utility hooks ---
+  // Clipboard & utility hooks
   const { copy, paste, canCopy, canPaste } = useClipboard({
     canvas,
     activeLayerId: activeGlobalLayerId || undefined,
@@ -85,16 +78,16 @@ export function useEditor({
     },
   });
 
-  // --- Canvas event handlers ---
+  // Canvas event handlers
   useCanvasEvents({
     save: handleSave,
     canvas: canvas!,
     setSelectedObjects,
     clearSelectionCallback,
-    activeTool 
+    activeTool,
   });
 
-  // --- Memoized editor API ---
+  // Memoized editor API
   const editor = useMemo(() => {
     if (!canvas) return undefined;
 
@@ -121,9 +114,26 @@ export function useEditor({
       setStrokeDashArray,
       setFontFamily,
     });
-  }, [canvas, copy, paste, canCopy, canPaste, undoOperation, redoOperation, canUndo, canRedo, handleSave, fillColor, strokeColor, strokeWidth, fontFamily, strokeDashArray, selectedObjects]);
+  }, [
+    canvas,
+    copy,
+    paste,
+    canCopy,
+    canPaste,
+    undoOperation,
+    redoOperation,
+    canUndo,
+    canRedo,
+    handleSave,
+    fillColor,
+    strokeColor,
+    strokeWidth,
+    fontFamily,
+    strokeDashArray,
+    selectedObjects,
+  ]);
 
-  // --- Hotkeys (after editor is defined) ---
+  // Hotkeys
   useHotkeys({
     canvas: canvas!,
     editor,
@@ -133,15 +143,15 @@ export function useEditor({
     paste,
     save: handleSave,
     activeTool,
-    onChangeActiveTool: externalOnChangeActiveTool || (() => {})
+    onChangeActiveTool: externalOnChangeActiveTool || (() => {}),
   });
 
   return {
     init,
     editor,
     setContainer,
-    activeTool, 
-    setActiveTool, 
+    activeTool,
+    setActiveTool,
     activeGlobalLayerId,
     getActiveGlobalLayer,
   };

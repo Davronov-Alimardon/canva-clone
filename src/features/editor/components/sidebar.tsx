@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  LayoutTemplate,
-  ImageIcon,
-  Pencil,
-  Settings,
-  Shapes,
-  Sparkles,
-  Type,
-} from "lucide-react";
+import { ImageIcon, Pencil, Settings, Sparkles, Type } from "lucide-react";
 
 import { ActiveTool } from "@/features/editor/types";
 import { SidebarItem } from "@/features/editor/components/sidebar-item";
@@ -22,7 +14,7 @@ export const Sidebar = ({ activeTool, onChangeActiveTool }: SidebarProps) => {
   return (
     <aside className="bg-white flex flex-col w-[100px] h-full border-r overflow-y-auto">
       <ul className="flex flex-col">
-         <SidebarItem
+        <SidebarItem
           icon={Sparkles}
           label="AI"
           isActive={activeTool === "ai"}

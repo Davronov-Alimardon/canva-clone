@@ -3,7 +3,7 @@ import {
   ActiveTool,
   Editor,
   STROKE_COLOR,
-  STROKE_WIDTH
+  STROKE_WIDTH,
 } from "@/features/editor/types";
 import { ToolSidebarClose } from "@/features/editor/components/tool-sidebar-close";
 import { ToolSidebarHeader } from "@/features/editor/components/tool-sidebar-header";
@@ -25,12 +25,10 @@ export const DrawSidebar = ({
   activeTool,
   onChangeActiveTool,
 }: DrawSidebarProps) => {
-   useEffect(() => {
+  useEffect(() => {
     if (activeTool === "draw" && editor) {
-      console.log('🎨 DrawSidebar - Enabling regular drawing mode');
-      // Clean up any existing drawing mode first
       editor.disableDrawingMode();
-      editor.enableDrawingMode(); // Regular Fabric.js drawing
+      editor.enableDrawingMode();
     }
   }, [activeTool, editor]);
 
@@ -40,7 +38,6 @@ export const DrawSidebar = ({
 
   const colorValue = editor?.getDrawToolColor() || STROKE_COLOR;
   const widthValue = editor?.getDrawToolWidth() || STROKE_WIDTH;
-
 
   const onClose = () => {
     editor?.disableDrawingMode();
@@ -59,7 +56,7 @@ export const DrawSidebar = ({
     <aside
       className={cn(
         "bg-white relative border-r z-[40] w-[360px] h-full flex flex-col",
-        activeTool === "draw" ? "visible" : "hidden",
+        activeTool === "draw" ? "visible" : "hidden"
       )}
     >
       <ToolSidebarHeader

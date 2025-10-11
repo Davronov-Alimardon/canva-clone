@@ -46,7 +46,7 @@ export const JSON_KEYS = [
   "paintFirst",
   "globalCompositeOperation",
   "skewX",
-  "skewY"
+  "skewY",
 ];
 
 export const filters = [
@@ -230,7 +230,11 @@ export interface CanvasBaseline {
     width: number;
     height: number;
   };
-  reason: "project_load" | "new_document" | "destructive_action" | "batch_start";
+  reason:
+    | "project_load"
+    | "new_document"
+    | "destructive_action"
+    | "batch_start";
 }
 
 export interface OperationHistory {
@@ -391,6 +395,7 @@ interface HistoryEntry {
 
 export interface FabricObjectWithLayer extends fabric.Object {
   layerId?: string;
+  objectId?: string;
 }
 
 export type LayerObjectData = ReturnType<fabric.Object["toObject"]> & {
@@ -419,6 +424,7 @@ export interface Layer {
   maskDataUrl: string | null;
   isVisible: boolean;
   prompt: string;
+  sectionalPrompt?: string; // Temporary storage for sectional prompt before sectional layer is created
   objects: LayerObjects;
   canvasState?: string;
   children?: Layer[];
@@ -440,7 +446,10 @@ export interface LayersState {
   getActiveGlobalLayer: () => Layer | null;
   setActiveGlobalLayer: (id: string) => void;
 
-  addSectionalLayer: (parentGlobalId: string, name?: string) => Promise<string | null>;
+  addSectionalLayer: (
+    parentGlobalId: string,
+    name?: string
+  ) => Promise<string | null>;
   getActiveSectionalLayer: () => Layer | null;
   setActiveSectionalLayer: (id: string | null) => void;
 
@@ -451,11 +460,18 @@ export interface LayersState {
   reorderLayers: (reordered: Layer[]) => void;
 
   setCanvas: (canvas: fabric.Canvas) => void;
-  setBrushMode: (enabled: boolean, activeSectionalLayerId?: string | null) => void;
+  setBrushMode: (
+    enabled: boolean,
+    activeSectionalLayerId?: string | null
+  ) => void;
 
   addLayer: () => void;
   toggleVisibility: (id: string) => void;
-  updateLayer: (id: string, updates: Partial<Layer>, addToHistory?: boolean) => void;
+  updateLayer: (
+    id: string,
+    updates: Partial<Layer>,
+    addToHistory?: boolean
+  ) => void;
   undo: () => void;
   redo: () => void;
 
@@ -472,7 +488,10 @@ export interface LayersState {
     direction: "forward" | "backward"
   ) => Promise<void>;
 
-  restoreObjectToCanvas: (objectData: LayerObjectData, layerId: string) => Promise<void>;
+  restoreObjectToCanvas: (
+    objectData: LayerObjectData,
+    layerId: string
+  ) => Promise<void>;
   syncLayerObjectsFromCanvas: (layerId: string) => void;
 
   executeOperation: (operation: CanvasOperation) => Promise<void>;
@@ -496,7 +515,10 @@ export interface LayersState {
   tagObjectWithActiveLayer: (obj: fabric.Object) => void;
   resetCanvasState: () => void;
 
-  createTransaction: (name: string, operations: CanvasOperation[]) => CanvasTransaction;
+  createTransaction: (
+    name: string,
+    operations: CanvasOperation[]
+  ) => CanvasTransaction;
   executeTransaction: (transaction: CanvasTransaction) => Promise<void>;
   currentTransaction: CanvasTransaction | null;
   startTransaction: (name: string) => string;
@@ -508,6 +530,72 @@ export interface LayersState {
     layers: Layer[],
     canvasConfig: { width: number; height: number; backgroundColor: string }
   ) => void;
+}
+
+// ========== Image Processing Types ==========
+
+export interface BoundingBox {
+  top: number;
+  left: number;
+  right: number;
+  bottom: number;
+}
+
+export interface CropBox {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+export interface ImageProcessingError extends Error {
+  code:
+    | "CANVAS_CONTEXT_ERROR"
+    | "IMAGE_LOAD_ERROR"
+    | "FILE_READ_ERROR"
+    | "INVALID_DIMENSIONS";
+}
+
+export interface ImageDimensions {
+  width: number;
+  height: number;
+}
+
+// ========== Canvas Compositing Types ==========
+
+export interface CompositeOptions {
+  backgroundColor?: string;
+  multiplier?: number;
+  format?: "png" | "jpg" | "jpeg";
+}
+
+export interface MaskGenerationOptions {
+  scale?: number;
+  edgeClearWidth?: number;
+}
+
+export interface LayerComposite {
+  layers: Layer[];
+  width: number;
+  height: number;
+  backgroundUrl?: string | null;
+}
+
+export interface SerializedCanvasObject {
+  type: string;
+  left: number;
+  top: number;
+  width?: number;
+  height?: number;
+  scaleX?: number;
+  scaleY?: number;
+  angle?: number;
+  fill?: string;
+  stroke?: string;
+  strokeWidth?: number;
+  opacity?: number;
+  visible?: boolean;
+  [key: string]: unknown;
 }
 
 export interface SerializedFabricObject {
@@ -533,4 +621,36 @@ export interface SerializedFabricObject {
   rx?: number;
   ry?: number;
   radius?: number;
+}
+
+// ========== Fabric.js Path Types ==========
+
+export type PathCommand = "M" | "L" | "C" | "Q" | "Z" | "z";
+
+export interface PathSegment extends Array<PathCommand | number> {
+  0: PathCommand;
+  length: number;
+}
+
+export type FabricPathArray = PathSegment[];
+
+// ========== Extended Fabric Object Types ==========
+
+export interface FabricObjectWithIds extends fabric.Object {
+  layerId?: string;
+  objectId?: string;
+}
+
+export interface HTMLImageElementExtended extends HTMLImageElement {
+  src: string;
+}
+
+export interface SerializedCanvasObjectExtended extends SerializedCanvasObject {
+  _element?: HTMLImageElementExtended | { src: string };
+  path?: string | FabricPathArray;
+  text?: string;
+  fontSize?: number;
+  fontFamily?: string;
+  strokeLineCap?: string;
+  strokeLineJoin?: string;
 }

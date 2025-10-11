@@ -56,9 +56,6 @@ export const Navbar = ({
 
   const currentStatus = data[data.length - 1];
 
-  const isError = currentStatus === "error";
-  const isPending = currentStatus === "pending";
-
   // Local autosave hook
   const { status: autosaveStatus, lastSaved } = useLocalAutosave();
 
@@ -172,13 +169,19 @@ export const Navbar = ({
                   </div>
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
-                  <DropdownMenuItem onClick={() => editor?.savePng("current-layer")}>
+                  <DropdownMenuItem
+                    onClick={() => editor?.savePng("current-layer")}
+                  >
                     PNG
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => editor?.saveJpg("current-layer")}>
+                  <DropdownMenuItem
+                    onClick={() => editor?.saveJpg("current-layer")}
+                  >
                     JPG
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => editor?.saveSvg("current-layer")}>
+                  <DropdownMenuItem
+                    onClick={() => editor?.saveSvg("current-layer")}
+                  >
                     SVG
                   </DropdownMenuItem>
                 </DropdownMenuSubContent>
@@ -196,13 +199,19 @@ export const Navbar = ({
                   </div>
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
-                  <DropdownMenuItem onClick={() => editor?.savePng("flattened")}>
+                  <DropdownMenuItem
+                    onClick={() => editor?.savePng("flattened")}
+                  >
                     PNG
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => editor?.saveJpg("flattened")}>
+                  <DropdownMenuItem
+                    onClick={() => editor?.saveJpg("flattened")}
+                  >
                     JPG
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => editor?.saveSvg("flattened")}>
+                  <DropdownMenuItem
+                    onClick={() => editor?.saveSvg("flattened")}
+                  >
                     SVG
                   </DropdownMenuItem>
                 </DropdownMenuSubContent>

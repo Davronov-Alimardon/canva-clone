@@ -31,7 +31,7 @@ export const FillColorSidebar = ({
     <aside
       className={cn(
         "absolute left-[100px] top-0 bg-white border-r z-[60] w-[360px] h-full flex flex-col shadow-lg",
-        activeTool === "fill" ? "visible" : "hidden",
+        activeTool === "fill" ? "visible" : "hidden"
       )}
     >
       <ToolSidebarHeader
