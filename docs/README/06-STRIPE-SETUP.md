@@ -18,10 +18,12 @@
 
 **See:** Fig.6.0, Fig.6.1.
 
-![Fig.6.0](../images/fig6_0.png)  
+![Fig.6.0](../images/fig6_0.png)
+
 <p align="center"><em>Fig.6.0: Stripe Dashboard</em></p>
 
-![Fig.6.1](../images/fig6_1.png)  
+![Fig.6.1](../images/fig6_1.png)
+
 <p align="center"><em>Fig.6.1: Create a new account</em></p>
 
 ### Step 2: Get Secret Key
@@ -31,9 +33,9 @@
 
 **See:** Fig.6.2.
 
-![Fig.6.2](../images/fig6_2.png)  
-<p align="center"><em>Fig.6.2: Secrete key</em></p>
+![Fig.6.2](../images/fig6_2.png)
 
+<p align="center"><em>Fig.6.2: Secrete key</em></p>
 
 ### Step 3: Add to Environment File
 
@@ -45,9 +47,9 @@ STRIPE_SECRET_KEY=sk_test_your_secret_key_here
 
 **See:** Fig.6.3.
 
-![Fig.6.3](../images/fig6_3.png)  
-<p align="center"><em>Fig.6.3: Fill the Stripe Secret Key in .env file</em></p>
+![Fig.6.3](../images/fig6_3.png)
 
+<p align="center"><em>Fig.6.3: Fill the Stripe Secret Key in .env file</em></p>
 
 ---
 
@@ -67,12 +69,13 @@ STRIPE_SECRET_KEY=sk_test_your_secret_key_here
 
 **See:** Fig.6.4, Fig.6.5.
 
-![Fig.6.4](../images/fig6_4.png)  
+![Fig.6.4](../images/fig6_4.png)
+
 <p align="center"><em>Fig.6.4: Adding product</em></p>
 
-![Fig.6.5](../images/fig6_5.png)  
-<p align="center"><em>Fig.6.5: Product</em></p>
+![Fig.6.5](../images/fig6_5.png)
 
+<p align="center"><em>Fig.6.5: Product</em></p>
 
 ### Step 5: Copy Price ID
 
@@ -81,7 +84,8 @@ STRIPE_SECRET_KEY=sk_test_your_secret_key_here
 
 **See:** Fig.6.6.
 
-![Fig.6.6](../images/fig6_6.png)  
+![Fig.6.6](../images/fig6_6.png)
+
 <p align="center"><em>Fig.6.6: Copy price ID</em></p>
 
 ### Step 6: Add to Environment File
@@ -99,16 +103,19 @@ STRIPE_PRICE_ID=price_your_price_id_here
 ### Step 7: Install Stripe CLI
 
 Download for your operating system:
+
 - [docs.stripe.com/stripe-cli/install](https://docs.stripe.com/stripe-cli/install)
 
 Install in your project root folder.
 
 **See:** Fig.6.7, Fig.6.8.
 
-![Fig.6.7](../images/fig6_7.png)  
+![Fig.6.7](../images/fig6_7.png)
+
 <p align="center"><em>Fig.6.7: Test with a local listener</em></p>
 
-![Fig.6.8](../images/fig6_8.png)  
+![Fig.6.8](../images/fig6_8.png)
+
 <p align="center"><em>Fig.6.8: Local listener setup</em></p>
 
 ### Step 8: Login to Stripe CLI
@@ -118,7 +125,9 @@ Open a **new terminal** and run:
 ```bash
 stripe login
 ```
+
 or
+
 ```bash
 ./stripe login
 ```
@@ -127,10 +136,12 @@ This will open your browser - click **"Allow access"**
 
 **See:** Fig.6.9, Fig.6.10.
 
-![Fig.6.9](../images/fig6_9.png)  
+![Fig.6.9](../images/fig6_9.png)
+
 <p align="center"><em>Fig.6.9: Stripe CLI</em></p>
 
-![Fig.6.10](../images/fig6_10.png)  
+![Fig.6.10](../images/fig6_10.png)
+
 <p align="center"><em>Fig.6.10: Go with the flow</em></p>
 
 ### Step 9: Start Webhook Listener
@@ -138,30 +149,34 @@ This will open your browser - click **"Allow access"**
 In the same terminal, run:
 
 ```bash
-stripe listen --forward-to localhost:3000/api/webhooks/stripe
+stripe listen --forward-to localhost:3000/api/subscriptions/webhook
 ```
+
 or
+
 ```bash
-./stripe listen --forward-to localhost:3000/api/webhooks/stripe
+./stripe listen --forward-to localhost:3000/api/subscriptions/webhook
 ```
 
 **Important:** Keep this terminal window open! Don't close it.
 
 You'll see output like:
+
 ```
 > Ready! Your webhook signing secret is whsec_xxxxx
 ```
 
-Copy the webhook secret (the part after `whsec_`).
+Copy the webhook secret.
 
 **See:** Fig.6.11.
 
-![Fig.6.11](../images/fig6_11.png)  
+![Fig.6.11](../images/fig6_11.png)
+
 <p align="center"><em>Fig.6.11: Allow access</em></p>
 
 ### Step 10: Add Webhook Secret to .env
 
-Open `.env` and add:
+Open `.env` and add the **full** secret from the CLI (including `whsec_`):
 
 ```env
 STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
@@ -193,10 +208,12 @@ bun dev
 
 **See:** Fig.6.12, Fig.6.13.
 
-![Fig.6.12](../images/fig6_12.png)  
+![Fig.6.12](../images/fig6_12.png)
+
 <p align="center"><em>Fig.6.12: Stripe listen on localhost:3000</em></p>
 
-![Fig.6.13](../images/fig6_13.png)  
+![Fig.6.13](../images/fig6_13.png)
+
 <p align="center"><em>Fig.6.13: Dummy info && Subscribe</em></p>
 
 ### Step 13: Verify Subscription
@@ -221,7 +238,8 @@ Now that you have Pro access:
 
 **See:** Fig.6.14.
 
-![Fig.6.14](../images/fig6_14.png)  
+![Fig.6.14](../images/fig6_14.png)
+
 <p align="center"><em>Fig.6.14: Successful</em></p>
 
 ### Step 15: Test Background Removal
@@ -233,12 +251,13 @@ Now that you have Pro access:
 
 **See:** Fig.6.15, Fig.6.17.
 
-![Fig.6.15](../images/fig6_15.png)  
+![Fig.6.15](../images/fig6_15.png)
+
 <p align="center"><em>Fig.6.15: Image Generation</em></p>
 
-![Fig.6.16](../images/fig6_16.png)  
-<p align="center"><em>Fig.6.16: Go ahead and play</em></p>
+![Fig.6.16](../images/fig6_16.png)
 
+<p align="center"><em>Fig.6.16: Go ahead and play</em></p>
 
 ---
 
@@ -249,11 +268,13 @@ Now that you have Pro access:
 **Troubleshooting:**
 
 **Webhook not receiving events:**
+
 - Ensure Stripe CLI terminal is still running
 - Check that webhook secret is correct in `.env`
 - Restart both terminals if needed
 
 **Payment fails:**
+
 - Use the test card number exactly: `4242 4242 4242 4242`
 - Make sure you're in test mode (not live mode)
 

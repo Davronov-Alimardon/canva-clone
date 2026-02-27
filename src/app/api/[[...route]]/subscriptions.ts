@@ -68,7 +68,7 @@ const app = new Hono()
     const session = await stripe.checkout.sessions.create({
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}?success=1`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}?canceled=1`,
-      payment_method_types: ["card", "paypal"],
+      payment_method_types: ["card"],
       mode: "subscription",
       billing_address_collection: "auto",
       customer_email: auth.token.email || "",
@@ -109,16 +109,18 @@ const app = new Hono()
         return c.json({ error: "Invalid signature" }, 400);
       }
 
-      const session = event.data.object as Stripe.Checkout.Session;
-
       if (event.type === "checkout.session.completed") {
-        const subscription = await stripe.subscriptions.retrieve(
-          session.subscription as string,
-        );
+        const session = event.data.object as Stripe.Checkout.Session;
+        const subscriptionId =
+          typeof session.subscription === "string"
+            ? session.subscription
+            : session.subscription?.id;
 
-        if (!session?.metadata?.userId) {
+        if (!subscriptionId || !session?.metadata?.userId) {
           return c.json({ error: "Invalid session" }, 400);
         }
+
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
         await db
           .insert(subscriptions)
@@ -137,24 +139,28 @@ const app = new Hono()
       }
 
       if (event.type === "invoice.payment_succeeded") {
-        const subscription = await stripe.subscriptions.retrieve(
-          session.subscription as string,
-        );
+        const invoice = event.data.object as Stripe.Invoice;
+        const subscriptionId =
+          typeof invoice.subscription === "string"
+            ? invoice.subscription
+            : invoice.subscription?.id;
 
-        if (!session?.metadata?.userId) {
-          return c.json({ error: "Invalid session" }, 400);
+        if (!subscriptionId) {
+          return c.json(null, 200);
         }
+
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
         await db
           .update(subscriptions)
           .set({
             status: subscription.status,
             currentPeriodEnd: new Date(
-              subscription.current_period_end * 1000,
+              subscription.current_period_end * 1000
             ),
             updatedAt: new Date(),
           })
-          .where(eq(subscriptions.id, subscription.id))
+          .where(eq(subscriptions.subscriptionId, subscription.id));
       }
 
       return c.json(null, 200);
