@@ -133,6 +133,15 @@ const app = new Hono()
             ),
             createdAt: new Date(),
             updatedAt: new Date(),
+          })
+          // Stripe redelivers events; one row per Stripe subscription.
+          .onConflictDoUpdate({
+            target: subscriptions.subscriptionId,
+            set: {
+              status: subscription.status,
+              currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+              updatedAt: new Date(),
+            },
           });
       }
 

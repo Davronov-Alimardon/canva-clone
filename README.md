@@ -91,6 +91,10 @@ bun run db:studio
 
 **Full command reference:** See [Installation Guide](./docs/README/01-INSTALLATION.md)
 
+### Webhook concurrency test
+
+Stripe can deliver webhook events late, twice, or out of order. `npm run test:race` runs the Stripe webhook's database writes in every possible order on a real Postgres with [VibeRaven](https://viberaven.dev) (`npx -y viberaven race`), and fails if any order breaks the rule in `drizzle/race/webhook.race.json`. It also runs in `npm test`. Add a rule there when you add a webhook handler.
+
 ---
 
 ## 🔧 Environment Variables

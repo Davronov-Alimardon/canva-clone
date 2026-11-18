@@ -130,7 +130,7 @@ export const subscriptions = pgTable("subscription", {
     .references(() => users.id, {
       onDelete: "cascade"
     }),
-  subscriptionId: text("subscriptionId").notNull(),
+  subscriptionId: text("subscriptionId").notNull().unique(),
   customerId: text("customerId").notNull(),
   priceId: text("priceId").notNull(),
   status: text("status").notNull(),

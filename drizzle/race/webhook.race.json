@@ -1,0 +1,21 @@
+{
+  "rule": "A redelivered checkout.session.completed must not create a second subscription row",
+  "setup": "INSERT INTO \"user\"(id,email) VALUES ('u1','u@x.io')",
+  "invariant": "SELECT count(*) <= 1 FROM subscription WHERE \"subscriptionId\"='sub_1'",
+  "isolation": [
+    "read committed"
+  ],
+  "notes": "SQL transliteration of the webhook handler; covers bounded SQL orders only, not HTTP or Stripe.",
+  "requests": [
+    {
+      "statements": [
+        "INSERT INTO subscription(id,\"userId\",\"subscriptionId\",\"customerId\",\"priceId\",status,\"createdAt\",\"updatedAt\") VALUES ('rowA','u1','sub_1','cus_1','prod_1','active',now(),now()) ON CONFLICT (\"subscriptionId\") DO UPDATE SET status = excluded.status, \"updatedAt\" = excluded.\"updatedAt\""
+      ]
+    },
+    {
+      "statements": [
+        "INSERT INTO subscription(id,\"userId\",\"subscriptionId\",\"customerId\",\"priceId\",status,\"createdAt\",\"updatedAt\") VALUES ('rowB','u1','sub_1','cus_1','prod_1','active',now(),now()) ON CONFLICT (\"subscriptionId\") DO UPDATE SET status = excluded.status, \"updatedAt\" = excluded.\"updatedAt\""
+      ]
+    }
+  ]
+}
